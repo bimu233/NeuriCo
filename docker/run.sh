@@ -483,12 +483,14 @@ cmd_login() {
     mkdir -p "$HOME/.claude" "$HOME/.codex" "$HOME/.gemini"
 
     local gpu_flags=$(get_gpu_flags)
+    local user_flags=$(get_user_flags)
 
-    # Note: No --user flag for login - we run as the container user to write credentials
-    # Set HOME=/tmp so CLI tools write credentials to the mounted volumes at /tmp/.xxx
+    # Use --user to match host UID so writes to mounted credential dirs succeed.
+    # The entrypoint detects the non-writable /home/researcher and sets HOME=/tmp,
+    # which makes CLI tools write to /tmp/.claude etc. (the mounted volumes).
     eval "docker run -it --rm \
         $gpu_flags \
-        -e HOME=/tmp \
+        $user_flags \
         --env-file \"$PROJECT_ROOT/.env\" \
         -v \"$HOME/.claude:/tmp/.claude\" \
         -v \"$HOME/.codex:/tmp/.codex\" \
@@ -640,7 +642,7 @@ read_masked() {
     done
 
     echo "" >&2  # Newline after input
-    eval "$__resultvar=\$value"
+    printf -v "$__resultvar" '%s' "$value"
 }
 
 # Return formatted status string for a config variable
@@ -676,7 +678,7 @@ config_set_env() {
     fi
 }
 
-# Read a secret value from user input (hidden)
+# Read a secret value from user input (masked with *)
 # Usage: prompt_secret "Label" "ENV_VAR" "required|optional" "validation_prefix"
 prompt_secret() {
     local label="$1"
@@ -827,14 +829,15 @@ setup_login_provider() {
     read < /dev/tty
 
     local gpu_flags=$(get_gpu_flags 2>/dev/null)
+    local user_flags=$(get_user_flags)
     eval "docker run -it --rm \
         $gpu_flags \
-        -e HOME=/tmp \
+        $user_flags \
         --env-file \"$PROJECT_ROOT/.env\" \
         -v \"$host_dir:$container_dir\" \
         -w /tmp \
         \"$IMAGE_NAME\" \
-        $cli_cmd" 2>/dev/null || true
+        $cli_cmd" || true
 
     echo ""
     if [ -d "$host_dir" ] && [ "$(ls -A "$host_dir" 2>/dev/null)" ]; then
