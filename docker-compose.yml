@@ -37,6 +37,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - NEURICO_WORKSPACE=/workspaces
+      - CLAUDE_CONFIG_DIR=/tmp/.claude
 
     # Volume mounts for persistent storage
     volumes:
@@ -51,10 +52,10 @@ services:
       # Templates and skills (read-only, customizable without rebuild)
       - ./templates:/app/templates:ro
       # CLI credentials (for cached logins)
-      # Note: Claude uses ~/.claude, Codex uses ~/.codex, Gemini uses ~/.gemini
-      - ~/.claude:/home/researcher/.claude:ro
-      - ~/.codex:/home/researcher/.codex:ro
-      - ~/.gemini:/home/researcher/.gemini:ro
+      # Mounted to /tmp/ because entrypoint sets HOME=/tmp for non-root users
+      - ~/.claude:/tmp/.claude:ro
+      - ~/.codex:/tmp/.codex:ro
+      - ~/.gemini:/tmp/.gemini:ro
       # Optional: SSH keys for private GitHub repos
       # - ~/.ssh:/home/researcher/.ssh:ro
 

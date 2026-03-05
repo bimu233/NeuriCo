@@ -228,6 +228,21 @@ setup_git
 check_gpu
 start_paper_finder
 
+# Optional: update CLI tools at startup (opt-in via NEURICO_UPDATE_TOOLS=1)
+# Note: Requires write access to /usr/local/bin and /usr/lib/node_modules (root).
+# Use ./neurico update-tools instead for persistent updates.
+if [ "${NEURICO_UPDATE_TOOLS:-0}" = "1" ]; then
+    if [ -w /usr/local/bin ]; then
+        echo -e "${BLUE}Updating CLI tools (NEURICO_UPDATE_TOOLS=1)...${NC}"
+        npm install -g @openai/codex@latest @google/gemini-cli@latest 2>/dev/null || true
+        curl -fsSL https://claude.ai/install.sh 2>/dev/null | bash 2>/dev/null || true
+        cp ~/.local/bin/claude /usr/local/bin/claude 2>/dev/null || true
+        echo ""
+    else
+        echo -e "${YELLOW}[WARN]${NC} NEURICO_UPDATE_TOOLS=1 requires root access. Use ./neurico update-tools instead."
+    fi
+fi
+
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}  Container Ready${NC}"
 echo -e "${GREEN}========================================${NC}"
