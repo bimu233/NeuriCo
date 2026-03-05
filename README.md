@@ -13,7 +13,7 @@
 
 <hr>
 
-NeuriCo is an autonomous research framework that takes structured research ideas and orchestrates AI agents to design, execute, analyze, and document experiments across diverse domains.
+**NeuriCo** (**Neuri**al **Co**-Scientist, inspired by Enrico Fermi) is an autonomous research framework that takes structured research ideas and orchestrates AI agents to design, execute, analyze, and document experiments across diverse domains.
 
 <div align="center">
 <img src="assets/neurico-6x.gif" alt="NeuriCo Demo" width="700"/>
