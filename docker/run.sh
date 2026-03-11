@@ -1100,7 +1100,7 @@ setup_login_provider() {
         -v \"$host_dir:$container_dir\" \
         -w /tmp \
         \"$IMAGE_NAME\" \
-        $cli_cmd" || true
+        $cli_cmd" < /dev/tty || true
 
     echo ""
     if [ -d "$host_dir" ] && [ "$(ls -A "$host_dir" 2>/dev/null)" ]; then
