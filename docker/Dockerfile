@@ -159,34 +159,18 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV UV_COMPILE_BYTECODE=1
 ENV PYTHONPATH="/app:${PYTHONPATH}"
 
-# Create non-root user for security
-ARG UID=1000
-ARG GID=1000
-RUN groupadd -g ${GID} neurico \
-    && useradd -u ${UID} -g neurico -m -s /bin/bash neurico
+# Create directories
+RUN mkdir -p /workspaces \
+    /app/ideas/submitted /app/ideas/in_progress /app/ideas/completed \
+    /app/logs /app/runs
 
-# Create workspace directory (will be mounted from host)
-RUN mkdir -p /workspaces && chown neurico:neurico /workspaces
-
-# Create necessary directories and fix permissions
-RUN mkdir -p /app/ideas/submitted /app/ideas/in_progress /app/ideas/completed \
-    /app/logs /app/runs \
-    && chown -R neurico:neurico /app \
-    && chmod -R a+rX /app \
-    && chmod -R 777 /app/services/paper-finder
-
-# Switch to non-root user
-USER neurico
 WORKDIR /app
 
-# Configure git for the neurico user
+# Configure git and CLI dirs
 RUN git config --global user.email "noreply@neurico.dev" \
     && git config --global user.name "NeuriCo" \
-    && git config --global init.defaultBranch main
-
-# Create CLI tool configuration directories
-# Note: Claude uses ~/.claude, Codex uses ~/.codex, Gemini uses ~/.gemini
-RUN mkdir -p ~/.claude ~/.codex ~/.gemini ~/.cache/uv \
+    && git config --global init.defaultBranch main \
+    && mkdir -p ~/.claude ~/.codex ~/.gemini ~/.cache/uv \
     && echo 'PS1="neurico:\w\$ "' >> ~/.bashrc
 
 
