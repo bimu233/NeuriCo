@@ -33,6 +33,25 @@ sed_inplace() {
     fi
 }
 
+# Get the content digest of a remote registry image.
+# docker manifest inspect returns JSON whose *inner* "digest" fields are
+# per-platform or per-layer digests — NOT the digest of the manifest list
+# itself, which is what docker stores in RepoDigests after a pull.
+# We use `docker buildx imagetools inspect` which correctly reports the
+# manifest-list (or single-manifest) content digest.
+get_remote_digest() {
+    local image="$1"
+    # Method 1: docker buildx imagetools inspect (reliable, available in modern Docker)
+    local digest
+    digest=$(docker buildx imagetools inspect "$image" 2>/dev/null | awk '/^Digest:/{print $2; exit}')
+    if [ -n "$digest" ]; then
+        echo "$digest"
+        return
+    fi
+    # Fallback: return empty (caller treats as "could not check registry")
+    echo ""
+}
+
 # -----------------------------------------------------------------------------
 # ASCII Art Banner
 # -----------------------------------------------------------------------------
@@ -68,7 +87,7 @@ show_status() {
     # Docker image (with registry update check)
     if docker image inspect "$IMAGE_NAME" &> /dev/null; then
         local local_digest=$(docker inspect --format='{{index .RepoDigests 0}}' "$IMAGE_NAME" 2>/dev/null | sed 's/.*@//')
-        local remote_digest=$(docker manifest inspect "$REGISTRY_IMAGE" 2>/dev/null | grep -o '"digest": "sha256:[a-f0-9]*"' | head -1 | cut -d'"' -f4)
+        local remote_digest=$(get_remote_digest "$REGISTRY_IMAGE")
         if [ -n "$local_digest" ] && [ -n "$remote_digest" ] && [ "$local_digest" != "$remote_digest" ]; then
             echo -e "    Docker image ........ ${YELLOW}[UPDATE AVAILABLE]${NC} run: ${BOLD}./neurico update${NC}"
         elif [ -n "$local_digest" ] && [ -n "$remote_digest" ]; then
@@ -334,7 +353,7 @@ cmd_update() {
     # Step 2: Update Docker image
     echo -e "  ${BOLD}Step 2/2: Docker image${NC}"
     local local_digest=$(docker inspect --format='{{index .RepoDigests 0}}' "$IMAGE_NAME" 2>/dev/null | sed 's/.*@//')
-    local remote_digest=$(docker manifest inspect "$REGISTRY_IMAGE" 2>/dev/null | grep -o '"digest": "sha256:[a-f0-9]*"' | head -1 | cut -d'"' -f4)
+    local remote_digest=$(get_remote_digest "$REGISTRY_IMAGE")
 
     # Force amd64 on macOS — nvidia/cuda has no arm64 build
     local pull_platform=""
@@ -798,7 +817,7 @@ check_image() {
     if docker image inspect "$IMAGE_NAME" &> /dev/null; then
         # Image exists — compare digest against registry to detect updates
         local local_digest=$(docker inspect --format='{{index .RepoDigests 0}}' "$IMAGE_NAME" 2>/dev/null | sed 's/.*@//')
-        local remote_digest=$(docker manifest inspect "$REGISTRY_IMAGE" 2>/dev/null | grep -o '"digest": "sha256:[a-f0-9]*"' | head -1 | cut -d'"' -f4)
+        local remote_digest=$(get_remote_digest "$REGISTRY_IMAGE")
 
         if [ -n "$local_digest" ] && [ -n "$remote_digest" ]; then
             if [ "$local_digest" = "$remote_digest" ]; then
