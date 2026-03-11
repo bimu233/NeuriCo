@@ -9,15 +9,16 @@ NeuriCo now automatically creates GitHub repositories for each research experime
 
 ## Quick Setup
 
-### 1. Create GitHub Personal Access Token
+### 1. Create GitHub Personal Access Token (Classic)
 
-1. Go to https://github.com/settings/tokens
-2. Click "Generate new token" → "Generate new token (classic)"
-3. Give it a name: "NeuriCo"
-4. Select scopes:
+We recommend using a **Classic** token for simplicity.
+
+1. Go to https://github.com/settings/tokens/new (direct link to create a Classic token)
+2. Give it a name: "NeuriCo"
+3. Select scopes:
    - ✅ **repo** (Full control of private repositories — covers personal and org repos)
-5. Click "Generate token"
-6. **Copy the token immediately** (you won't see it again!)
+4. Click "Generate token"
+5. **Copy the token immediately** (you won't see it again!)
 
 ### 2. Configure Environment
 

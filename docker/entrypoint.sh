@@ -134,8 +134,9 @@ start_paper_finder() {
             if [ -d "/app/services/paper-finder" ]; then
                 echo "  Starting paper-finder service..."
 
-                # Create logs directory if needed
+                # Create logs directory if needed and ensure writable
                 mkdir -p /app/logs
+                chmod -R a+rwX /app/logs 2>/dev/null || true
 
                 # Start paper-finder in background (subshell to preserve cwd)
                 (cd /app/services/paper-finder/agents/mabool/api && nohup make start-dev >> /app/logs/paper-finder.log 2>&1 &)
@@ -204,7 +205,8 @@ show_version
 validate_env
 setup_git
 check_gpu
-start_paper_finder
+# Skip services during login-only sessions (faster startup)
+[ "${NEURICO_LOGIN_ONLY:-0}" != "1" ] && start_paper_finder
 
 # Optional: update CLI tools at startup (opt-in via NEURICO_UPDATE_TOOLS=1)
 # Note: Requires write access to /usr/local/bin and /usr/lib/node_modules (root).
