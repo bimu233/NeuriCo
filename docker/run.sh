@@ -300,11 +300,13 @@ ensure_directories() {
     mkdir -p "$PROJECT_ROOT/ideas/submitted"
     mkdir -p "$PROJECT_ROOT/ideas/in_progress"
     mkdir -p "$PROJECT_ROOT/ideas/completed"
-    # Make all mounted directories world-accessible so any UID inside the container
-    # can read/write. This avoids UID mismatch issues with shared Docker images.
-    chmod -R a+rwX "$workspace_dir" "$PROJECT_ROOT/logs" "$PROJECT_ROOT/ideas" 2>/dev/null || true
-    # Config and templates are mounted read-only but still need to be readable
-    chmod -R a+rX "$PROJECT_ROOT/config" "$PROJECT_ROOT/templates" 2>/dev/null || true
+    # Make the entire project directory world-accessible so any UID inside the
+    # container can read/write. This avoids UID mismatch issues with shared Docker images.
+    chmod -R a+rwX "$PROJECT_ROOT" 2>/dev/null || true
+    # Workspace may be outside PROJECT_ROOT (configurable in config/workspace.yaml)
+    chmod -R a+rwX "$workspace_dir" 2>/dev/null || true
+    # Restrict .env to owner-only since it contains secrets (important on shared servers)
+    chmod 600 "$PROJECT_ROOT/.env" 2>/dev/null || true
 }
 
 # -----------------------------------------------------------------------------
@@ -756,6 +758,7 @@ cmd_login() {
     eval "docker run -it --rm \
         $gpu_flags \
         --env-file \"$PROJECT_ROOT/.env\" \
+        -e NEURICO_LOGIN_ONLY=1 \
         -v \"$HOME/.claude:/home/neurico/.claude\" \
         -v \"$HOME/.codex:/home/neurico/.codex\" \
         -v \"$HOME/.gemini:/home/neurico/.gemini\" \
@@ -1115,6 +1118,7 @@ setup_login_provider() {
         $gpu_flags \
         $user_flags \
         --env-file \"$PROJECT_ROOT/.env\" \
+        -e NEURICO_LOGIN_ONLY=1 \
         -e CLAUDE_CONFIG_DIR=$container_dir \
         -v \"$host_dir:$container_dir\" \
         -w /tmp \
@@ -1311,7 +1315,7 @@ cmd_setup() {
 setup_env_interactive() {
     # ── GitHub credentials ──
     prompt_secret "GitHub Token" "GITHUB_TOKEN" "required" "ghp_" \
-        "Get one at: https://github.com/settings/tokens (repo scope)" || true
+        "Create a Classic token: https://github.com/settings/tokens/new (select 'repo' scope)" || true
     echo ""
 
     # GitHub Organization
@@ -1430,7 +1434,7 @@ cmd_config() {
             1)
                 echo ""
                 prompt_secret "GitHub Token" "GITHUB_TOKEN" "required" "ghp_" \
-                    "Get one at: https://github.com/settings/tokens (repo scope)" || true
+                    "Create a Classic token: https://github.com/settings/tokens/new (select 'repo' scope)" || true
                 ;;
             2)
                 echo ""

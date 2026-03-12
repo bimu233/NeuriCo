@@ -140,7 +140,7 @@ Or copy `.env.example` to `.env` and edit manually. Here's what each variable do
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `GITHUB_TOKEN` | Yes | GitHub Personal Access Token ([generate here](https://github.com/settings/tokens), `repo` scope) |
+| `GITHUB_TOKEN` | Yes | GitHub Classic Personal Access Token ([create here](https://github.com/settings/tokens/new), select `repo` scope) |
 | `GITHUB_ORG` | No | GitHub org name (default: personal account) |
 
 **Paper Finder** — `OPENAI_API_KEY` + `S2_API_KEY` required for full paper-finder; `COHERE_API_KEY` optional (improves ranking)
