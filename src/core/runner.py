@@ -104,13 +104,13 @@ class ResearchRunner:
     def run_research(self, idea_id: str,
                     provider: str = "claude",
                     timeout: int = 3600,
-                    full_permissions: bool = False,
+                    full_permissions: bool = True,
                     multi_agent: bool = True,
                     pause_after_resources: bool = False,
                     skip_resource_finder: bool = False,
                     resource_finder_timeout: int = 2700,
                     use_scribe: bool = False,
-                    write_paper: bool = False,
+                    write_paper: bool = True,
                     paper_style: str = None,
                     paper_timeout: int = 3600,
                     no_hash: bool = False,
@@ -868,8 +868,9 @@ def main():
     )
     parser.add_argument(
         "--full-permissions",
-        action="store_true",
-        help="Allow full permissions to CLI agents (codex/gemini: --yolo, claude: --dangerously-skip-permissions)"
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Allow full permissions to CLI agents (codex/gemini: --yolo, claude: --dangerously-skip-permissions) (default: True, use --no-full-permissions to disable)"
     )
     parser.add_argument(
         "--legacy-mode",
@@ -899,8 +900,9 @@ def main():
     )
     parser.add_argument(
         "--write-paper",
-        action="store_true",
-        help="Generate paper draft after experiments complete"
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Generate paper draft after experiments complete (default: True, use --no-write-paper to disable)"
     )
     parser.add_argument(
         "--paper-style",
