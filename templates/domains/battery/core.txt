@@ -89,30 +89,142 @@ The base researcher template is designed for general empirical research. For bat
 - Use "coulombic efficiency" (not "columbic" or "Coulombic efficiency" — lowercase c is acceptable per IUPAC)
 - "State of charge" (SOC) and "depth of discharge" (DOD) — define the reference points
 
-## Computational Tools
+## Computational Methods and Tools
 
-### Battery-Specific Python Libraries
-- **PyBaMM**: Physics-based battery modeling (SPM, DFN, equivalent circuit); open-source, well-documented
+### In-Session Computation (feasible within a single NeuriCo session)
+
+These methods can run directly in the session environment:
+
+**Machine Learning / Statistical Methods**
+- **Property prediction**: Train models (GP, random forest, gradient boosting, neural nets) to predict electrochemical properties from material descriptors
+- **Gaussian Process (GP) surrogate models**: Provide both predictions and uncertainty estimates; ideal for active learning and candidate ranking
+- **Active learning**: Use acquisition functions (Expected Improvement, Upper Confidence Bound) to select next candidates balancing exploitation and exploration
+- **Feature engineering for battery materials**: Composition-based features (elemental properties, stoichiometry), structure-based features (bond lengths, coordination numbers via pymatgen), electrochemical descriptors (voltage, capacity, ionic radius ratios)
+- **Clustering and dimensionality reduction**: t-SNE, UMAP, PCA for visualizing material spaces and identifying structure-property relationships
+- **Tools**: scikit-learn, GPy/GPyTorch, xgboost, pandas, numpy
+
+**Physics-Based Simulation**
+- **PyBaMM**: Full electrochemical models (SPM, SPMe, DFN) for voltage prediction, capacity fade, impedance; supports parameter estimation and sensitivity analysis
+- **Analytical models**: Fick's law for diffusion, Butler-Volmer kinetics, Nernst equation for equilibrium potentials, Arrhenius analysis for activation energies
+
+**Materials Analysis**
+- **pymatgen**: Crystal structure analysis, phase diagrams, electrochemical stability windows, defect analysis, pourbaix diagrams
 - **impedance.py**: EIS equivalent circuit fitting and analysis
-- **cellpy**: Cycling data processing and analysis; reads various instrument file formats
+- **cellpy**: Cycling data processing; reads Arbin, Biologic, Maccor formats
 - **galvani**: Parse electrochemical data files from Biologic, Gamry, and other potentiostats
-- **pymatgen**: Materials analysis — crystal structure, phase diagrams, electrochemical stability windows
 
-### General Scientific Python
-- **NumPy/SciPy**: Numerical computation, curve fitting, signal processing
+**General Scientific Python**
+- **NumPy/SciPy**: Numerical computation, curve fitting, signal processing, ODE solvers
 - **pandas**: Tabular data management for cycling records
-- **matplotlib**: Publication-quality electrochemistry plots
+- **matplotlib/seaborn**: Publication-quality electrochemistry plots
 - **scikit-learn**: Machine learning for property prediction, clustering, feature analysis
 
-### Atomistic Simulation (if applicable)
-- **ASE** (Atomic Simulation Environment): Structure manipulation, calculator interface
-- **VASP/Quantum ESPRESSO**: DFT calculations for voltage prediction, migration barriers, electronic structure
-- **LAMMPS**: Molecular dynamics for electrolyte transport, interface studies
+### HPC-Dependent Computation (generate input files, document plan)
+
+These methods typically require HPC resources and cannot complete within a single session. If the research calls for them, generate input files and submission scripts rather than attempting to run them:
+
+**Density Functional Theory (DFT)**
+- **Voltage prediction**: Calculate total energies at different lithiation states; voltage = -(G_charged - G_discharged) / (n × F)
+- **Migration barriers**: Nudged Elastic Band (NEB) method for Li+/Na+ diffusion pathways and activation energies
+- **Electronic structure**: DOS and band structure for understanding redox mechanisms (which TM is oxidized/reduced)
+- **Interface modeling**: Electrode-electrolyte interface (SEI/CEI) structure and stability
+- **Defect formation energies**: Vacancy formation, interstitial energies, oxygen vacancy stability
+- **Typical parameters**: PBE or PBE+U functional (U values: Mn ~3.9, Co ~3.3, Ni ~6.2 eV for NCM), cutoff energy 520 eV, k-point density ~30/Å, force convergence <0.02 eV/Å
+- **Tools**: VASP, Quantum ESPRESSO, ASE (Atomic Simulation Environment)
+
+**Molecular Dynamics (MD)**
+- **Electrolyte transport**: Ionic conductivity, diffusion coefficients, transference number from mean-square displacement or Green-Kubo relations
+- **Solvation structure**: Radial distribution functions (RDF), coordination number analysis, residence times
+- **Interface dynamics**: Electrode-electrolyte interface formation, SEI growth mechanisms
+- **Force field selection**: OPLS-AA (organic solvents), SPC/E or TIP4P (water), ReaxFF (reactive processes), machine learning potentials (for accuracy approaching DFT)
+- **Water activity computation** (for aqueous systems): From chemical potential of water in mixture vs pure water
+- **Tools**: LAMMPS, GROMACS, ASE
+
+**When to use HPC methods**: If the research question fundamentally requires atomistic insight (e.g., "in what form does Li re-enter the lattice?"), acknowledge this limitation, describe what DFT/MD calculations would be needed, generate input files if possible, and focus the in-session work on literature review, thermodynamic analysis, and ML-based approaches that can provide complementary insights.
 
 ### Databases
-- **Materials Project** (materialsproject.org): Computed properties for ~150K materials, including ~5K battery electrodes
+- **Materials Project** (materialsproject.org): Computed properties for ~150K materials, ~5K battery electrodes; has Python API (mp-api)
 - **AFLOW** (aflowlib.org): High-throughput computed materials data
 - **Battery Data Genome** (batterydata.energy.gov): Experimental cycling datasets
+- **ICSD** (Inorganic Crystal Structure Database): Experimental crystal structures
+- **COD** (Crystallography Open Database): Open-access crystal structures
+
+## Computation-Experiment Bridge
+
+When computational work produces results, translate them into actionable experimental guidance:
+
+### From Computation to Experimental Recommendations
+
+1. **Candidate ranking**:
+   - Rank candidates by predicted performance (e.g., predicted voltage, capacity, stability)
+   - Include uncertainty estimates: recommend both "exploitation" candidates (highest predicted value) and "exploration" candidates (highest uncertainty)
+   - Consider experimental feasibility: reagent availability, synthesis difficulty, safety (avoid toxic or air-sensitive materials unless justified)
+
+2. **Experimental conditions**:
+   - Based on computational results, recommend appropriate test conditions (voltage window, C-rate, temperature)
+   - Flag where computational approximations may cause experiment-computation mismatch (e.g., DFT overbinding, force field limitations)
+
+3. **Validation metrics**:
+   - Define what experimental measurements would confirm or reject computational predictions
+   - Specify quantitative thresholds: "If measured capacity is within ±10% of predicted, the model is validated"
+   - Identify which electrochemical tests are most informative (CV for redox potentials, EIS for kinetics, GITT for diffusion)
+
+4. **Output format**:
+   - Generate `experimental_recommendations.md` with ranked candidate list
+   - Include `candidates.csv` with predicted properties and recommended test conditions
+   - Provide clear rationale for each recommendation
+
+## Experimental Data Integration
+
+When experimental data is available (from user-provided datasets or previous iterations):
+
+### Data Quality Assessment
+- Check for completeness: Are all expected measurements present?
+- Check for anomalies: Voltage spikes, capacity jumps, negative CE values
+- Verify consistency: Do replicate cells agree within expected variance?
+- Check units and normalization: Gravimetric vs areal capacity, correct active mass
+
+### Computation-Experiment Comparison
+- Plot predicted vs measured values (parity plot)
+- Calculate prediction errors: RMSE, MAE, R² for quantitative predictions
+- Identify systematic biases: Does computation consistently over/under-predict?
+- Categorize discrepancies: Model limitation vs experimental artifact vs genuinely interesting finding
+
+### Model Update Strategy
+- If using surrogate models (GP, ML): Add new experimental data to training set, retrain
+- If using physics-based models (PyBaMM): Adjust parameters based on experimental fit
+- Document each update: what changed, why, and the effect on predictions
+
+### Iteration Decision
+- If predictions and experiments agree well: Expand search to new regions of design space
+- If systematic bias exists: Investigate and correct model assumptions before continuing
+- If unexpected results appear: Flag as potential discovery, investigate with additional analysis
+
+## Aqueous Electrolyte Specific Guidance
+
+### Electrochemical Stability Window
+- Water's theoretical decomposition voltage is 1.23 V (HER at cathode, OER at anode)
+- "Water-in-salt" (WIS) strategy: High salt concentration (~21m LiTFSI) reduces free water, extending window to ~3 V
+- Eutectic strategy: Mix H₂O with non-aqueous solvents to disrupt hydrogen bond network, achieving similar window extension at potentially lower cost
+- Key metric: Onset potentials of HER and OER measured by linear sweep voltammetry (LSV)
+
+### Eutectic Electrolytes
+- **Definition**: H₂O/non-aqueous solvent mixtures forming deep eutectic solutions
+- **Mechanism**: Non-aqueous component disrupts water's hydrogen bond network → reduces water activity → suppresses water decomposition → widens electrochemical window
+- **Key parameters**: Eutectic temperature, H₂O/solvent molar ratio, ionic conductivity (mS/cm), viscosity (mPa·s), water activity (a_w)
+- **Distinction from WIS**: WIS relies on high salt concentration; eutectic relies on solvent mixing. Eutectic may offer better conductivity at lower cost.
+
+### Water Activity as Performance Descriptor
+- **Correlation chain**: Low water activity → less free water → suppressed HER/OER → wider stability window → better Zn reversibility (for Zn-based systems)
+- **Trade-off**: Low water activity also increases viscosity → reduces ionic conductivity → worse rate capability
+- **Optimization target**: Find the water activity range that maximizes stability window × conductivity product, or use a Pareto front approach
+- **Measurement methods**: Isopiestic method, dew point measurement, or indirect estimation from osmotic coefficients
+
+### High-Throughput Electrochemical Testing
+- Automated coin cell assembly: Control electrolyte volume (µL/mAh ratio) for consistency
+- Parallel testing: Ensure temperature uniformity across channels; use environmental chambers
+- Data management: Standardized naming convention (composition_concentration_cellN_date), automated data extraction pipeline
+- Statistical rigor: Minimum 3 replicate cells per condition; report mean ± standard deviation
 
 ## REPORT.md Structure for Battery Research
 
@@ -163,3 +275,34 @@ Before finalizing your work, verify:
 8. **Ignoring formation cycles**: Not reporting or standardizing formation protocol. Formation cycles affect SEI quality and all subsequent performance
 9. **Cherry-picking data**: Reporting only the best-performing cell instead of the average across replicates
 10. **Missing coulombic efficiency**: Capacity vs. cycle plots without CE data hide side reactions and irreversible losses. CE is often more revealing than capacity for degradation analysis
+
+## REPORT.md Structure for Battery Research
+
+Choose the structure that best matches your session's accomplishments:
+
+### Option A: Comprehensive Report (when full computational study is completed)
+
+1. **Executive Summary**: Key findings — best achieved capacity, cycling stability, rate performance, or model predictions
+2. **Research Question**: The hypothesis or problem being investigated
+3. **Materials and Methods**: Cell chemistry, electrode details, electrolyte, computational methods used, software versions
+4. **Electrochemical Performance** (if applicable):
+   - Initial capacity and voltage profiles
+   - Rate capability results
+   - Long-term cycling stability with coulombic efficiency
+5. **Computational/Modeling Results**:
+   - Simulation or model setup and validation
+   - Predictions and their confidence/uncertainty
+   - Comparison with available experimental data
+6. **Degradation Analysis** (if applicable): Capacity fade mechanisms, impedance evolution
+7. **Comparison with Literature**: Table comparing key metrics against published results
+8. **Discussion**: Interpretation, structure-property relationships, practical implications
+9. **Conclusions**: Summary and recommended next steps
+10. **References**: Full citations
+
+### Option B: Staged Output (when work is part of an iterative process)
+
+1. **Literature Survey & Hypothesis**: What is known, what gaps exist, refined research question
+2. **Computational Approach & Results**: Methods used, key findings, model performance
+3. **Experimental Recommendations** (if applicable): Ranked candidates, suggested conditions, validation criteria
+4. **Discovery Summary**: Core insights, confidence level, what would change the conclusions
+5. **Next Iteration Plan**: What additional computation or experiments are needed

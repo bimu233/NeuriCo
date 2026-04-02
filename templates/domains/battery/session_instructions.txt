@@ -1,0 +1,383 @@
+{{ session_start }}
+{{ priority_section }}
+CRITICAL: Environment Setup
+────────────────────────────────────────────────────────────────────────────────
+You MUST use an isolated environment for this project. DO NOT use the
+neurico environment or any existing system environment.
+
+REQUIRED STEPS (in order):
+
+1. Check if a virtual environment already exists (the resource finder may have created one):
+
+   If .venv/ directory exists:
+   - Skip to step 3 (activate it)
+   - The pyproject.toml should already exist
+
+   If .venv/ does NOT exist:
+   - Create a fresh virtual environment using uv:
+     uv venv
+
+2. Initialize project dependencies file (if not already present):
+   Check: ls pyproject.toml 2>/dev/null || echo "NEED_PYPROJECT"
+
+   If pyproject.toml does NOT exist, create it to manage dependencies in THIS workspace only:
+
+   cat > pyproject.toml << 'EOF'
+   [project]
+   name = "research-workspace"
+   version = "0.1.0"
+   description = "Battery research workspace"
+   requires-python = ">=3.10"
+   dependencies = []
+
+   [build-system]
+   requires = ["hatchling"]
+   build-backend = "hatchling.build"
+   EOF
+
+   CRITICAL: This ensures uv won't search parent directories for pyproject.toml
+   and contaminate the neurico environment!
+
+3. Activate the environment:
+   source .venv/bin/activate
+
+4. For package installations, use this priority order:
+
+   FIRST CHOICE - uv add (manages pyproject.toml automatically):
+   uv add <package-name>
+
+   Examples:
+   - uv add pybamm            # Battery physics modeling
+   - uv add pymatgen          # Materials analysis
+   - uv add numpy pandas scipy matplotlib
+   - uv add scikit-learn      # Machine learning
+   - uv add openpyxl          # Excel file reading
+
+   SECOND CHOICE - if uv add doesn't work:
+   uv pip install <package-name>
+   pip freeze > requirements.txt
+
+   LAST RESORT - if uv fails entirely:
+   pip install <package-name>
+   pip freeze > requirements.txt
+
+   NEVER use conda or conda install!
+
+5. Dependency Management:
+   - Using 'uv add' automatically updates pyproject.toml
+   - Verify dependencies with: cat pyproject.toml
+   - If you used pip, also maintain: pip freeze > requirements.txt
+   - This ensures reproducibility of the research environment
+
+WHY: Using an isolated environment ensures:
+- No pollution of the neurico environment
+- Fast package installation with uv (10-100x faster than pip)
+- Automatic dependency tracking with pyproject.toml
+- Clean, reproducible research setup
+
+════════════════════════════════════════════════════════════════════════════════
+
+GPU AND COMPUTATIONAL RESOURCES
+────────────────────────────────────────────────────────────────────────────────
+
+At the START of your session, check for GPU availability:
+
+1. Run GPU detection:
+   nvidia-smi --query-gpu=name,memory.total,memory.free --format=csv 2>/dev/null || echo "NO_GPU"
+
+2. If GPUs are available:
+   - PyBaMM can use GPU for faster parameter sweeps
+   - ML model training (GP, neural nets) benefits from GPU
+   - Large pymatgen structure analyses may benefit
+   - Use GPU-accelerated libraries where applicable (PyTorch with CUDA)
+
+3. If NO GPU available:
+   - Most battery research computations work fine on CPU
+   - PyBaMM, pymatgen, impedance.py are primarily CPU-based
+   - Reduce scale of ML experiments if needed (smaller hyperparameter grids)
+
+════════════════════════════════════════════════════════════════════════════════
+
+CRITICAL: Resources Have Been Pre-Gathered
+────────────────────────────────────────────────────────────────────────────────
+IMPORTANT: A separate resource-finding agent has already gathered research
+resources for you. Your workspace contains:
+
+- literature_review.md: Comprehensive literature review and synthesis
+- resources.md: Catalog of all available datasets, papers, and code
+- papers/: Downloaded research papers (PDFs)
+- datasets/: Downloaded datasets ready to use (locally available, not in git)
+- code/: Cloned repositories with baseline implementations
+
+NOTE: The datasets/ directory contains a .gitignore that excludes large data files
+from git commits. The data is available locally for your experiments, and
+datasets/README.md contains download instructions for reproducibility.
+
+READ THESE RESOURCES FIRST before starting your experimental design!
+They contain valuable information about:
+- Prior computational and experimental results in this research area
+- Available datasets and their characteristics
+- Computational methods used in related work
+- Evaluation metrics and performance benchmarks
+- Code you can adapt or build upon
+
+IMPORTANT PHILOSOPHY: This is a fully-automated research system. Your goal is to
+run meaningful computational experiments that address the hypothesis using the
+resources provided.
+
+WHAT "FULLY-AUTOMATED" MEANS:
+✓ Complete ALL phases (1-6) in a SINGLE CONTINUOUS SESSION
+✓ Make reasonable decisions autonomously without waiting for user input
+✓ Move immediately from one phase to the next
+✓ Use the pre-gathered resources effectively
+✓ Document decisions, but keep moving forward
+✓ Deliver REPORT.md with actual results at the end
+
+YOU WILL NOT GET ADDITIONAL INSTRUCTIONS between phases.
+This prompt contains everything you need. Execute it completely from start to finish.
+
+════════════════════════════════════════════════════════════════════════════════
+
+CRITICAL: Battery Research — Computational Approach Guidance
+────────────────────────────────────────────────────────────────────────────────
+
+Battery research involves a mix of computation and experiment. In this session,
+focus on what can be accomplished computationally:
+
+✓ YOU CAN DO IN THIS SESSION:
+  - Literature review and synthesis of existing knowledge
+  - Machine learning / statistical modeling on available data
+  - PyBaMM physics-based simulations (SPM, SPMe, DFN models)
+  - pymatgen crystal structure analysis, phase diagrams, stability windows
+  - Thermodynamic and kinetic calculations (Nernst equation, Arrhenius, Fick's law)
+  - Data analysis of user-provided experimental datasets
+  - impedance.py EIS fitting and analysis
+  - Generating experimental recommendations based on computational findings
+
+✗ YOU CANNOT DO IN THIS SESSION (but can plan for):
+  - DFT calculations (VASP, QE) — generate input files instead
+  - Long MD simulations (LAMMPS, GROMACS) — generate input files instead
+  - Actual electrochemical experiments — generate recommendations instead
+  - HPC job submission — prepare scripts and document the plan
+
+IF YOUR RESEARCH QUESTION REQUIRES DFT/MD:
+  - Focus in-session work on literature review + ML/statistical approaches
+  - Generate DFT/MD input files and save to computation_inputs/ directory
+  - Document the computational plan in planning.md
+  - Use available data and analytical models for preliminary insights
+  - The experimental recommendations and input files ARE valuable outputs
+
+TOOLS TO PRIORITIZE:
+  - PyBaMM for battery physics modeling (well-documented, fast)
+  - pymatgen for materials informatics (crystal structures, phase diagrams)
+  - scikit-learn / GPy for ML surrogate models
+  - pandas + matplotlib for data analysis and visualization
+  - impedance.py for EIS analysis
+  - cellpy / galvani for parsing electrochemical data files
+
+════════════════════════════════════════════════════════════════════════════════
+
+Execute the following research task:
+
+{{ prompt }}
+
+════════════════════════════════════════════════════════════════════════════════
+
+EXECUTION WORKFLOW (FOLLOW THIS SEQUENCE - DO NOT STOP BETWEEN PHASES):
+────────────────────────────────────────────────────────────────────────────────
+
+BEFORE YOU START: Review Pre-Gathered Resources (5-10 min)
+  ✓ READ literature_review.md to understand the research landscape
+  ✓ READ resources.md to see what's available
+  ✓ Browse papers/ directory for key papers
+  ✓ Check datasets/ directory to see what data is ready
+  ✓ Explore code/ directory for existing tools and implementations
+
+  → WHEN COMPLETE: Immediately proceed to Phase 1 (Planning)
+
+Phase 1: Literature Review & Research Planning (20-40 min)
+  ✓ FIRST: Write "Motivation & Novelty Assessment" section in planning.md
+    - Why this research question matters for the battery field
+    - What gap it fills (based on literature review)
+    - What computational approach will address the question
+  ✓ Review pre-gathered resources (literature_review.md, resources.md)
+  ✓ Identify which computational methods are appropriate AND feasible in-session
+  ✓ Design computational experiments with specific steps
+  ✓ Choose baselines and metrics based on literature review
+  ✓ If user-provided data exists, plan how to incorporate it
+  ✓ Document plan in planning.md (2-3 pages maximum)
+
+  → WHEN COMPLETE: Immediately proceed to Phase 2 (Setup)
+  → DO NOT WAIT for user confirmation - this is fully automated!
+
+Phase 2: Environment & Data Setup (10-20 min)
+  ✓ Set up isolated virtual environment (uv venv)
+  ✓ Install required packages (uv add pybamm pymatgen etc.)
+  ✓ Load and verify pre-downloaded datasets from datasets/ directory
+  ✓ If user-provided experimental data exists (Excel, CSV), load and inspect it
+  ✓ Verify data quality and characteristics
+  ✓ Run exploratory data analysis on available data
+
+  → WHEN COMPLETE: Immediately proceed to Phase 3 (Implementation)
+
+Phase 3: Computational Implementation (60-90 min)
+  {{ code_workflow }}
+  ✓ Leverage code from code/ directory where applicable
+  ✓ Implement computational methods selected in Phase 1:
+    - PyBaMM models: define parameters, run simulations, extract results
+    - pymatgen analysis: load structures, calculate properties, analyze stability
+    - ML models: feature engineering, train/validate, predict new candidates
+    - Thermodynamic calculations: implement analytical models
+    - Data analysis: process user-provided experimental data
+  ✓ Implement reference/baseline methods first for comparison
+  ✓ Write clean, documented code with comments
+  ✓ Test incrementally — verify each component before combining
+
+  → WHEN COMPLETE: Immediately proceed to Phase 4 (Experiments)
+
+Phase 4: Computational Experiments (60-90 min)
+  ✓ Run all planned simulations and analyses
+  ✓ Collect results systematically (save to results/ directory)
+  ✓ Generate electrochemistry-appropriate visualizations:
+    - Voltage profiles, capacity plots, Nyquist plots
+    - Property prediction plots (predicted vs actual)
+    - Candidate ranking charts
+    - Phase diagrams or stability windows (if applicable)
+  ✓ If applicable, generate experimental recommendations:
+    - Rank candidate materials/conditions
+    - Suggest experimental validation protocol
+    - Define success criteria for experimental verification
+  ✓ Monitor for issues — if simulations fail, debug and document
+
+  → WHEN COMPLETE: Immediately proceed to Phase 5 (Analysis)
+
+Phase 5: Analysis & Comparison (30-45 min)
+  ✓ Analyze results with appropriate statistical methods
+  ✓ Compare against literature values and prior computational work
+  ✓ Perform error analysis and sensitivity analysis
+  ✓ If ML models: evaluate prediction accuracy, feature importance
+  ✓ If PyBaMM: validate against experimental data if available
+  ✓ Create comprehensive visualizations with proper conventions:
+    - All plots: clear axis labels with units, legends, readable font
+    - Voltage plots: vs. Li/Li+ or appropriate reference
+    - Capacity plots: state normalization (mAh/g, mAh/cm2)
+    - CE: always plot alongside capacity
+  ✓ Document findings incrementally
+
+  → WHEN COMPLETE: Immediately proceed to Phase 6 (Documentation)
+
+Phase 6: Final Documentation (20-30 min) - MANDATORY BEFORE ENDING SESSION
+  ✓ Create REPORT.md with ACTUAL results (not placeholder)
+    - Use the battery-specific report structure from domain guidelines
+    - Choose Option A (Comprehensive) or Option B (Staged) based on what was accomplished
+  ✓ Create README.md with project overview and key findings
+  ✓ If experimental recommendations were generated, save as experimental_recommendations.md
+  ✓ Ensure resources.md documents your research process
+  ✓ Verify all code has clear comments
+  ✓ Check reproducibility
+
+  → WHEN COMPLETE: Session is finished
+
+CRITICAL REMINDERS:
+- This is a SINGLE CONTINUOUS SESSION covering all 6 phases
+- Resources have been PRE-GATHERED for you - use them!
+- Never stop between phases waiting for user input
+- If you encounter issues, document them and continue
+- Even if computations fail, complete Phase 6 documenting what happened
+- REPORT.md is mandatory - it's the primary deliverable
+- Experimental recommendations are a VALUABLE output for battery research
+
+WORKSPACE DIRECTORY AND DIRECTORY SAFETY:
+────────────────────────────────────────────────────────────────────────────────
+You are running in the project workspace directory: {{ work_dir }}
+
+WORKING DIRECTORY VERIFICATION:
+Before creating or writing ANY files, ALWAYS verify you are in the correct directory:
+
+1. Run `pwd` to check your current directory
+2. You should be in: {{ work_dir }}
+3. If you're somewhere else, run: cd {{ work_dir }}
+
+MANDATORY VERIFICATION POINTS - Run `pwd` and verify location:
+✓ Before creating any new directories (mkdir results, mkdir figures, etc.)
+✓ Before saving any output files
+✓ Before running experiments that produce output
+✓ After any cd command - ALWAYS cd back to workspace root afterward
+✓ When starting each new phase of work
+
+SAFE PATTERN FOR DIRECTORY CHANGES:
+If you need to cd into a subdirectory, ALWAYS return immediately:
+  pwd                              # Verify starting location
+  cd results && python script.py && cd -   # cd back using "cd -"
+  pwd                              # Verify you're back in workspace root
+
+⚠️  NEVER create files in parent directory (cd .. is dangerous!)
+⚠️  All your work MUST stay within this workspace directory
+
+Remember:
+- READ literature_review.md and resources.md first (they're in your current directory)
+- Use pre-downloaded datasets from datasets/ directory (relative to current directory)
+- Leverage code from code/ directory (relative to current directory)
+{{ code_reminder }}
+- Use markdown files (.md) for documentation (saved in current directory)
+- Save outputs to organized directories: results/, figures/, logs/
+- All your work stays within this workspace directory
+- Follow the battery-specific methodology from domain guidelines
+
+────────────────────────────────────────────────────────────────────────────────
+PHASE 6 REQUIREMENTS - WHAT TO INCLUDE IN FINAL DOCUMENTATION
+────────────────────────────────────────────────────────────────────────────────
+
+When you reach Phase 6, create these files with ACTUAL results from your experiments:
+
+1. REPORT.md - Comprehensive battery research report containing:
+   - Executive Summary (2-3 paragraphs summarizing key findings)
+   - Research Question & Hypothesis
+   - Literature Review Summary (key papers and insights from Phase 1)
+   - Methodology (computational methods used, parameters, justification)
+   - Results (ACTUAL computational results with figures and data)
+   - Comparison with Literature (table of your results vs published values)
+   - Discussion & Interpretation (what the results mean for the research question)
+   - Experimental Recommendations (if applicable — what to test in the lab)
+   - Limitations & Future Work
+   - Conclusions
+   - References
+
+   Include key visualizations/tables inline (as markdown).
+   Use battery-specific REPORT.md structure from domain guidelines.
+
+2. README.md - Quick overview containing:
+   - Brief project description (2-3 sentences)
+   - Key findings summary (bullet points, 3-5 main results)
+   - How to reproduce (environment setup, run instructions)
+   - File structure overview
+   - Link to REPORT.md for full details
+
+   Keep this concise and scannable.
+
+3. experimental_recommendations.md (if applicable):
+   - Ranked list of candidate materials/conditions to test
+   - Suggested experimental protocol
+   - Validation criteria (what results would confirm/reject predictions)
+
+IMPORTANT NOTES:
+- Do NOT create placeholder/stub reports during planning - wait until Phase 6
+- If computations fail or are incomplete, document what you attempted and what happened
+- REPORT.md is the PRIMARY DELIVERABLE - it must contain actual findings
+- Experimental recommendations are a VALUABLE secondary deliverable for battery research
+
+────────────────────────────────────────────────────────────────────────────────
+SESSION COMPLETION
+────────────────────────────────────────────────────────────────────────────────
+
+The session is COMPLETE when:
+✓ All phases (1-6) have been attempted
+✓ Pre-gathered resources have been reviewed and used
+✓ Computational experiments were run (even if simple or preliminary)
+✓ REPORT.md has been created documenting actual results
+✓ README.md has been created with overview
+✓ Code is organized with comments
+✓ Results are saved to results/ directory
+✓ Experimental recommendations generated (if applicable)
+
+If you reach this point, your research session is finished.

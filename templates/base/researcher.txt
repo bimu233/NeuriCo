@@ -7,6 +7,15 @@ comprehensively.
 This prompt uses meta-prompting techniques and chain-of-thought reasoning to
 guide you through the complete research workflow. Follow each phase carefully.
 
+NOTE: This template provides universal research methodology applicable to all
+domains. Your research domain may have specific guidelines that supplement
+these phases with field-specific tools, methods, and reporting requirements.
+Always check domain-specific guidelines for detailed guidance on:
+- How to interpret each phase for your field
+- Recommended computational tools and methods
+- Report structure tailored to your domain
+- Field-specific quality standards and common pitfalls
+
 IMPORTANT: Resources have been pre-gathered for you!
 Check your workspace for:
 - literature_review.md: Synthesized literature review
@@ -192,9 +201,10 @@ Execute your plan systematically and carefully:
    ✓ Set random seeds for reproducibility
    ✓ Configure logging
    ✓ Check GPU availability (run: nvidia-smi --query-gpu=name,memory.total,memory.free --format=csv)
-   ✓ Configure batch sizes based on available GPU memory (8GB→16-32, 16GB→32-64, 24GB+→64-128)
-   ✓ Set up mixed precision training if GPU available (PyTorch: autocast/GradScaler, TF: mixed_float16)
-   ✓ Document environment (Python version, library versions, GPU info)
+   ✓ If GPUs available: use GPU-accelerated computation where beneficial
+     (see domain-specific guidelines for compute recommendations)
+   ✓ If no GPU: use CPU-optimized settings, adjust computational scale as needed
+   ✓ Document environment (Python version, library versions, hardware info)
 
 2. Data Preparation
    ✓ Load and validate datasets
@@ -204,23 +214,12 @@ Execute your plan systematically and carefully:
    ✓ Save example samples for documentation
    ✓ Visualize data distributions
 
-3. Implementation (adapt to research type)
-
-   For METHOD papers (proposing new techniques):
-   ✓ Implement baselines first (simpler methods, prior work)
-   ✓ Implement proposed method
-   ✓ Establish performance floor to validate evaluation pipeline
-
-   For BENCHMARK/EVALUATION papers (new datasets or metrics):
-   ✓ Implement evaluation harness
-   ✓ Test on existing models/methods
-   ✓ Validate metric properties (reliability, discriminability)
-   ✓ Compare to existing benchmarks if applicable
-
-   For ANALYSIS papers (understanding phenomena):
-   ✓ Implement measurement/analysis tools
-   ✓ Design controlled experiments or ablations
-   ✓ Test hypotheses systematically
+3. Implementation (adapt to your research type)
+   ✓ Follow the approach outlined in your research plan
+   ✓ Implement reference methods or baselines first (if applicable)
+   ✓ Implement your proposed method, analysis, or computational workflow
+   ✓ Establish a validation pipeline before running full experiments
+   ✓ See domain-specific guidelines for detailed implementation guidance
 
    General best practices:
    ✓ Write modular, well-commented code
@@ -389,193 +388,46 @@ This is the primary research report. Include these sections:
 - Key finding in one sentence
 - Practical implications
 
-## 2. Goal
+## 2. Research Question & Motivation
 - What hypothesis were you testing?
-- Why is this important?
-- What problem does this solve?
+- Why is this important? What gap does it fill?
 - Expected impact
 
-## 3. Data Construction
+## 3. Methodology
+- Approach and rationale (why this method over alternatives?)
+- Tools, libraries, and computational resources used (with versions)
+- Key design decisions and justification
+- Experimental protocol and reproducibility info
+  (random seeds, number of runs, hardware, execution time)
 
-### Dataset Description
-- Source and version
-- Size and characteristics
-- Collection methodology
-- Known biases or limitations
+## 4. Results
+- Key findings with supporting data and figures
+- Tables comparing methods, conditions, or systems
+- Visualizations with clear labels, units, and legends
+- Output file locations (results/, figures/, etc.)
 
-### Example Samples
-Show 2-3 representative examples with labels/annotations.
-Use formatted tables or code blocks.
+## 5. Analysis & Discussion
+- Interpretation in context of hypothesis
+- Comparison to baselines, prior work, or literature values
+- Statistical significance and effect sizes where applicable
+- Error analysis and failure modes
+- Surprises and unexpected insights
 
-### Data Quality
-- Missing values: X%
-- Outliers: Y instances
-- Class distribution: [if applicable]
-- Data validation checks performed
-
-### Preprocessing Steps
-Document every transformation:
-1. Step 1: Why and how
-2. Step 2: Why and how
-...
-
-### Train/Val/Test Splits
-- Split strategy and rationale
-- Size of each split
-- Stratification (if applicable)
-
-## 4. Experiment Description
-
-### Methodology
-
-#### High-Level Approach
-[Describe your approach and rationale]
-
-#### Why This Method?
-[Justify your methodological choices]
-[What alternatives did you consider and why reject them?]
-
-### Implementation Details
-
-#### Tools and Libraries
-List with versions:
-- Library 1: v1.2.3
-- Library 2: v4.5.6
-
-#### Algorithms/Models
-- Algorithm details
-- Architectural choices
-- Justification for choices
-
-#### Hyperparameters
-Present in table format:
-| Parameter | Value | Selection Method |
-|-----------|-------|------------------|
-| param1    | val1  | grid search      |
-| param2    | val2  | default          |
-
-#### Training Procedure or Analysis Pipeline
-Step-by-step description with justifications
-
-### Experimental Protocol
-
-#### Reproducibility Information
-- Number of runs for averaging: X
-- Random seeds used: [seed1, seed2, seed3]
-- Hardware: [GPU model, CPU, RAM]
-- Execution time: X minutes per run
-
-#### Evaluation Metrics
-For each metric:
-- What it measures
-- Why it's appropriate
-- How it's computed
-- Interpretation guidance
-
-### Raw Results
-
-Present results in multiple formats:
-
-#### Tables
-| Method    | Metric1 | Metric2 | Metric3 |
-|-----------|---------|---------|---------|
-| Baseline  | X±σ     | Y±σ     | Z±σ     |
-| Ours      | X±σ     | Y±σ     | Z±σ     |
-
-#### Visualizations
-- Training curves (if applicable)
-- Comparison plots
-- Distribution plots
-- Error analysis plots
-
-#### Output Locations
-- Results JSON: `results/metrics.json`
-- Plots: `results/plots/`
-- Models: `results/models/`
-
-## 5. Result Analysis
-
-### Key Findings
-State clearly and concisely:
-1. Finding 1 with evidence
-2. Finding 2 with evidence
-...
-
-### Hypothesis Testing Results
-- Do results support or refute hypothesis?
-- Statistical significance: p = X.XXX
-- Effect size: d = X.XX
-- Confidence intervals: [lower, upper]
-- Interpretation: [practical significance]
-
-### Comparison to Baselines
-- Improvement over baseline: X%
-- Is this improvement meaningful?
-- Statistical test results
-- When does our method win/lose?
-
-### Visualizations
-Include plots that illustrate:
-- Main findings
-- Comparisons
-- Error patterns
-- Feature importance (if applicable)
-
-Each plot must have:
-- Clear title
-- Labeled axes with units
-- Legend
-- Caption explaining what to observe
-
-### Surprises and Insights
-- Unexpected results and explanations
-- Interesting patterns discovered
-- Failed approaches and lessons learned
-- What worked differently than expected
-
-### Error Analysis
-- Common failure modes
-- Edge cases
-- Systematic biases
-- Visualizations of errors
-
-### Limitations
-Be honest and thorough:
+## 6. Limitations
 - Methodological limitations
-- Dataset limitations
-- Generalizability concerns
-- Assumptions made
+- Data or scope constraints
+- Assumptions and threats to validity
 - What could invalidate these results
 
-## 6. Conclusions
+## 7. Conclusions & Next Steps
+- Clear answer to research question (2-3 sentences)
+- Practical and theoretical implications
+- Recommended follow-up experiments or analyses
+- Open questions raised by this research
 
-### Summary
-Clear answer to research question in 2-3 sentences
-
-### Implications
-- Practical implications
-- Theoretical implications
-- Who should care about this and why
-
-### Confidence in Findings
-- How confident are you in these results?
-- What additional evidence would increase confidence?
-
-## 7. Next Steps
-
-### Immediate Follow-ups
-Experiments to run next:
-1. Follow-up 1 with rationale
-2. Follow-up 2 with rationale
-
-### Alternative Approaches
-Other methods worth trying
-
-### Broader Extensions
-How to extend this work to other domains/problems
-
-### Open Questions
-Unanswered questions raised by this research
+NOTE: Your research domain may define a more specific report structure.
+Check domain-specific guidelines for detailed reporting requirements tailored
+to your field (e.g., battery electrochemistry, machine learning, mathematics).
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

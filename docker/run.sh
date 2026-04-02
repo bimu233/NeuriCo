@@ -306,7 +306,7 @@ ensure_directories() {
     # runs, and a recursive chmod hangs for minutes. The container's entrypoint
     # sets umask 000, so all NEW files it creates are already world-writable.
     chmod a+rwX "$PROJECT_ROOT" 2>/dev/null || true
-    chmod -R a+rwX "$PROJECT_ROOT/logs" "$PROJECT_ROOT/ideas" 2>/dev/null || true
+    chmod -R a+rwX "$PROJECT_ROOT/logs" "$PROJECT_ROOT/ideas" "$PROJECT_ROOT/templates" "$PROJECT_ROOT/config" 2>/dev/null || true
     # Workspace may be outside PROJECT_ROOT (configurable in config/workspace.yaml)
     chmod a+rwX "$workspace_dir" 2>/dev/null || true
     # Make CLI credential dirs readable/writable by any UID. The container user

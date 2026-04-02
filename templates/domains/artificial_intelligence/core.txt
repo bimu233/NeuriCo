@@ -437,6 +437,46 @@ Before completing research:
 - [ ] Discussed limitations explicitly
 - [ ] Validated reproducibility (re-ran key experiments)
 
+## REPORT.md Structure for AI Research
+
+When writing REPORT.md, use this AI-specific structure:
+
+### 1. Executive Summary
+- Research question, key finding, practical implications (1 paragraph)
+
+### 2. Research Question & Motivation
+- Hypothesis tested, why it matters, gap in existing work
+
+### 3. Experimental Setup
+- **Models tested**: Exact model versions, API endpoints, and parameters (temperature, top_p, max_tokens)
+- **Prompts**: Full prompt text for each condition (or link to prompts/ directory)
+- **Datasets/Benchmarks**: Source, size, task type, split strategy
+- **Baselines**: What you compare against (zero-shot, few-shot, prior methods)
+- **Evaluation metrics**: What each measures, why appropriate
+- **Cost tracking**: API tokens used, estimated cost per condition
+
+### 4. Results
+- **Tables**: Model × Condition × Metric comparison with confidence intervals
+- **Visualizations**: Performance comparison plots, error breakdowns, learning curves
+- **Statistical tests**: Significance testing across runs/seeds
+- **Raw outputs**: Location of model response files (results/model_outputs/)
+
+### 5. Analysis & Discussion
+- Which conditions support/refute the hypothesis?
+- Error taxonomy: categorized failure modes with examples
+- When does the method work well vs poorly?
+- Qualitative analysis of representative successes and failures
+
+### 6. Limitations
+- Data contamination risks, benchmark limitations
+- API versioning and reproducibility concerns
+- Sample size adequacy
+
+### 7. Conclusions & Next Steps
+- Clear answer to research question
+- Recommended follow-up experiments
+- Open questions
+
 ## Additional Resources
 
 **Key Papers to Review**

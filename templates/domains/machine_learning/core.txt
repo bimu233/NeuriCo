@@ -588,6 +588,57 @@ COMMON PITFALLS
 ✓ RIGHT: Always use model.eval() for evaluation (disables dropout, etc.)
 
 ═══════════════════════════════════════════════════════════════════════════════
+REPORT.md STRUCTURE FOR MACHINE LEARNING RESEARCH
+═══════════════════════════════════════════════════════════════════════════════
+
+When writing REPORT.md, use this ML-specific structure:
+
+## 1. Executive Summary
+- Research question, key finding, practical implications (1 paragraph)
+
+## 2. Research Question & Motivation
+- Hypothesis tested, why it matters, gap in existing work
+
+## 3. Data Construction
+- **Dataset description**: Source, version, size, characteristics, known biases
+- **Example samples**: 2-3 representative examples with labels
+- **Data quality**: Missing values, outliers, class distribution, validation checks
+- **Preprocessing**: Every transformation documented (why and how)
+- **Train/Val/Test splits**: Strategy, rationale, sizes, stratification
+
+## 4. Methodology
+- **Approach**: High-level strategy with justification
+- **Baselines**: What you compare against and why
+- **Models/Algorithms**: Architecture, design choices, justification
+- **Hyperparameters** (table format):
+  | Parameter | Value | Selection Method |
+  |-----------|-------|------------------|
+  | param1    | val1  | grid search      |
+- **Training procedure**: Step-by-step with early stopping, learning rate schedule
+- **Evaluation metrics**: What each measures, why appropriate, how computed
+
+## 5. Results
+- **Tables**: Method × Metric comparison with mean ± std
+- **Visualizations**: Training curves, comparison plots, confusion matrices
+- **Statistical tests**: Paired t-test or bootstrap across seeds
+- **Output locations**: results/metrics.json, results/plots/, etc.
+
+## 6. Analysis & Discussion
+- Hypothesis testing results (p-values, effect sizes, confidence intervals)
+- When does the method win/lose vs baselines?
+- Error analysis: failure modes, edge cases, systematic biases
+- Surprises and unexpected findings
+
+## 7. Limitations
+- Methodological, dataset, and generalizability concerns
+- Assumptions made, what could invalidate results
+
+## 8. Conclusions & Next Steps
+- Clear answer to research question
+- Recommended follow-up experiments
+- Open questions
+
+═══════════════════════════════════════════════════════════════════════════════
 
 ADDITIONAL RESOURCES:
 
