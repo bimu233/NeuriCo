@@ -8,4 +8,4 @@ to detect version mismatches between the Docker image and host code.
 Keep in sync with: config/VERSION, pyproject.toml
 """
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
