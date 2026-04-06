@@ -1,0 +1,683 @@
+═══════════════════════════════════════════════════════════════════════════════
+                   FINANCE SPECIFIC GUIDELINES
+═══════════════════════════════════════════════════════════════════════════════
+
+These guidelines supplement the base researcher template with empirical
+finance best practices for data construction, identification strategies,
+estimation, robustness analysis, and presentation of results.
+
+Finance research workflow:
+  Research Question → Data Acquisition → Variable Construction →
+  Summary Statistics → Identification Strategy → Estimation →
+  Robustness Checks → Economic Interpretation → Paper Draft
+
+Phase mapping to base template:
+  Phase 0 (Motivation)       → Research question, economic mechanism
+  Phase 1 (Planning)         → Identification strategy design
+  Phase 2 (Implementation)   → Data construction, variable engineering
+  Phase 3 (Analysis)         → Regression estimation, robustness
+  Phase 4 (Documentation)    → Tables, figures, paper draft
+  Phase 5 (Validation)       → Robustness checks, alternative explanations
+
+─────────────────────────────────────────────────────────────────────────────
+DATA HANDLING AND PANEL CONSTRUCTION
+─────────────────────────────────────────────────────────────────────────────
+
+1. Common Finance Data Sources
+
+   FIRM-LEVEL:
+   - CRSP: Stock prices, returns, market cap (identifier: PERMNO)
+   - Compustat: Financial statements (identifier: GVKEY)
+   - CRSP/Compustat Merged (CCM): Linked via LPERMNO-GVKEY
+   - SEC EDGAR: Filings, 10-K/10-Q text
+
+   BANKING:
+   - FFIEC Call Reports: Balance sheets, income statements (identifier: RSSD)
+   - FDIC: Bank-level data, failures (identifier: CERT)
+   - Federal Reserve Y9C: Bank Holding Company data
+   - FR Y-14: Stress testing data (restricted)
+
+   MACRO/MARKET:
+   - FRED: Federal funds rate, Treasury yields, macro indicators
+   - Bloomberg/Refinitiv: Real-time market data
+   - TRACE: Corporate bond transactions
+   - TAQ: High-frequency equity trades
+
+   ALTERNATIVE:
+   - WRDS: Aggregator for CRSP, Compustat, IBES, Thomson Reuters
+   - Orbis/BvD: International firm data
+   - SDC Platinum: M&A, IPO, debt issuance
+
+2. Data Merging and Panel Construction
+
+   STATA:
+   ```stata
+   * Load and prepare balance sheet data
+   use "balance_sheets.dta", clear
+
+   * Ensure identifiers are clean
+   destring rssd, replace
+   drop if missing(rssd) | rssd == 0
+
+   * Create date variables
+   gen year = year(date)
+   gen quarter = quarter(date)
+   gen qdate = yq(year, quarter)
+   format qdate %tq
+
+   * Merge with income statement
+   merge 1:1 rssd qdate using "income_statements.dta"
+   tab _merge
+   * Investigate non-matches before dropping
+   drop if _merge != 3
+   drop _merge
+
+   * Declare panel structure
+   xtset rssd qdate
+   ```
+
+   PYTHON:
+   ```python
+   import pandas as pd
+
+   # Load data
+   bs = pd.read_stata('balance_sheets.dta')
+   inc = pd.read_stata('income_statements.dta')
+
+   # Clean identifiers
+   bs = bs.dropna(subset=['rssd'])
+   bs = bs[bs['rssd'] != 0]
+
+   # Merge
+   panel = bs.merge(inc, on=['rssd', 'qdate'], how='inner',
+                    indicator=True)
+   print(panel['_merge'].value_counts())  # Check match rates
+   panel = panel[panel['_merge'] == 'both'].drop('_merge', axis=1)
+
+   # Set panel index
+   panel = panel.set_index(['rssd', 'qdate']).sort_index()
+   ```
+
+3. Variable Construction
+
+   COMMON FINANCE VARIABLES:
+
+   STATA:
+   ```stata
+   * Ratios
+   gen eq_assets = (equity / assets) * 100
+   gen leverage = total_debt / assets
+   gen roa = net_income / assets * 100
+   gen roe = net_income / equity * 100
+   gen etr = ytd_taxes / ytd_pretax_inc if ytd_pretax_inc > 0
+
+   * Derived variables
+   gen log_assets = ln(assets)
+   gen tax_shield = etr * interest_expense
+   gen shield_pct_assets = tax_shield / assets * 100
+   gen intexp_assets = interest_expense / assets * 100
+
+   * Lagged variables (requires xtset)
+   gen L1_assets = L.assets
+   gen D_equity = D.equity        /* first difference */
+   gen growth = D.ln(assets)      /* log growth rate */
+
+   * Size quartiles within each year
+   bysort year: egen size_q = xtile(assets), nq(4)
+   ```
+
+   PYTHON:
+   ```python
+   # Ratios
+   df['eq_assets'] = (df['equity'] / df['assets']) * 100
+   df['leverage'] = df['total_debt'] / df['assets']
+   df['roa'] = df['net_income'] / df['assets'] * 100
+   df['etr'] = df.apply(
+       lambda r: r['ytd_taxes'] / r['ytd_pretax_inc']
+       if r['ytd_pretax_inc'] > 0 else None, axis=1
+   )
+
+   # Lagged variables
+   df['L1_assets'] = df.groupby('rssd')['assets'].shift(1)
+   df['D_equity'] = df.groupby('rssd')['equity'].diff()
+   df['log_assets'] = np.log(df['assets'])
+
+   # Size quartiles within each year
+   df['size_q'] = df.groupby('year')['assets'].transform(
+       lambda x: pd.qcut(x, 4, labels=[1, 2, 3, 4])
+   )
+   ```
+
+4. Winsorization
+
+   CRITICAL: Always winsorize continuous variables to handle outliers.
+   Standard: 1st and 99th percentiles. Report sensitivity to alternatives.
+
+   STATA:
+   ```stata
+   * Using winsor2 (ssc install winsor2)
+   winsor2 etr eq_assets roa leverage, cuts(1 99) replace
+
+   * Manual winsorization
+   foreach var of varlist etr eq_assets roa leverage {
+       qui sum `var', detail
+       replace `var' = r(p1) if `var' < r(p1) & !missing(`var')
+       replace `var' = r(p99) if `var' > r(p99) & !missing(`var')
+   }
+   ```
+
+   PYTHON:
+   ```python
+   from scipy.stats.mstats import winsorize
+
+   for col in ['etr', 'eq_assets', 'roa', 'leverage']:
+       df[col] = winsorize(df[col].dropna(), limits=[0.01, 0.01])
+
+   # Or manual
+   for col in ['etr', 'eq_assets', 'roa', 'leverage']:
+       p1, p99 = df[col].quantile([0.01, 0.99])
+       df[col] = df[col].clip(lower=p1, upper=p99)
+   ```
+
+5. Sample Selection and Filters
+
+   Document ALL sample restrictions and their impact on observations:
+
+   ```stata
+   * Track sample attrition
+   count                              /* Starting N */
+   drop if missing(assets) | assets <= 0
+   count                              /* After dropping missing assets */
+   drop if eq_assets < 1 | eq_assets > 50  /* Reasonable range */
+   count                              /* After equity filter */
+   keep if year >= 1980 & year <= 2024
+   count                              /* Final sample */
+   ```
+
+   IMPORTANT: Distinguish structural zeros from truly missing data.
+   In banking: zero loan loss provisions may be real, not missing.
+
+─────────────────────────────────────────────────────────────────────────────
+IDENTIFICATION STRATEGIES
+─────────────────────────────────────────────────────────────────────────────
+
+The strength of the identification strategy is the most critical element
+of empirical finance research. Every paper must clearly articulate:
+(1) What variation identifies the effect?
+(2) Why is this variation plausibly exogenous?
+(3) What are the threats to identification?
+
+1. Panel Fixed Effects
+
+   The workhorse of empirical finance. Absorbs unobserved heterogeneity.
+
+   STATA (using reghdfe — gold standard):
+   ```stata
+   * ssc install reghdfe
+   * Entity and time fixed effects with clustered SEs
+   reghdfe y x1 x2 controls, absorb(firm_id year) ///
+       cluster(firm_id)
+
+   * Two-way clustering (Petersen 2009)
+   reghdfe y x1 x2 controls, absorb(firm_id year) ///
+       cluster(firm_id year)
+
+   * High-dimensional FE (e.g., firm x quarter)
+   reghdfe y x1 x2, absorb(firm_id#quarter) cluster(firm_id)
+   ```
+
+   PYTHON (using pyfixest or linearmodels):
+   ```python
+   # pyfixest (closest to reghdfe)
+   import pyfixest as pf
+   fit = pf.feols("y ~ x1 + x2 + controls | firm_id + year",
+                   data=df, vcov={"CRV1": "firm_id"})
+   fit.summary()
+
+   # linearmodels
+   from linearmodels.panel import PanelOLS
+   mod = PanelOLS.from_formula(
+       'y ~ x1 + x2 + controls + EntityEffects + TimeEffects',
+       data=df.set_index(['firm_id', 'year'])
+   )
+   res = mod.fit(cov_type='clustered', cluster_entity=True)
+   ```
+
+   R (using fixest):
+   ```r
+   library(fixest)
+   feols(y ~ x1 + x2 + controls | firm_id + year,
+         data = df, cluster = ~firm_id)
+   ```
+
+2. Difference-in-Differences (DiD)
+
+   Exploits policy changes, regulatory shocks, or natural experiments.
+
+   CLASSIC TWO-PERIOD DiD:
+   ```stata
+   gen post = (year >= treatment_year)
+   gen treated_post = treated * post
+
+   reghdfe y treated_post controls, absorb(firm_id year) ///
+       cluster(firm_id)
+   ```
+
+   EVENT STUDY (dynamic effects):
+   ```stata
+   * Create relative time indicators
+   gen rel_time = year - treatment_year
+   forvalues t = -5/5 {
+       gen D`t' = (rel_time == `t')
+   }
+   * Omit t = -1 as baseline
+   drop D_1
+
+   reghdfe y D_5-D0 D1-D5 controls, absorb(firm_id year) ///
+       cluster(firm_id)
+   * Plot coefficients for pre-trends test
+   ```
+
+   STAGGERED ADOPTION (modern estimators):
+   ```stata
+   * Callaway and Sant'Anna (2021)
+   * ssc install csdid
+   csdid y controls, ivar(firm_id) time(year) ///
+       gvar(first_treated_year) method(dripw)
+
+   * Sun and Abraham (2021)
+   * ssc install eventstudyinteract
+   eventstudyinteract y lead* lag*, cohort(first_treated) ///
+       control_cohort(never_treated) absorb(firm_id year) ///
+       cluster(firm_id)
+   ```
+
+   IMPORTANT: With staggered adoption, classic TWFE DiD is biased.
+   Use Callaway-Sant'Anna, Sun-Abraham, or de Chaisemartin-D'Haultfoeuille.
+   Always test for parallel pre-trends.
+
+3. Instrumental Variables (IV)
+
+   Requirements: (1) Relevance — instrument predicts endogenous variable
+   (2) Exclusion — instrument affects outcome only through the endogenous variable
+
+   STATA:
+   ```stata
+   * 2SLS
+   ivreghdfe y controls (endog_var = instrument), ///
+       absorb(firm_id year) cluster(firm_id)
+
+   * Check first-stage F-statistic (must be > 10, Stock-Yogo)
+   * Check: estat firststage
+   * Weak instrument test: Kleibergen-Paap rk Wald F
+   ```
+
+   PYTHON:
+   ```python
+   from linearmodels.iv import IV2SLS
+   mod = IV2SLS.from_formula(
+       'y ~ 1 + controls + [endog_var ~ instrument]',
+       data=df
+   )
+   res = mod.fit(cov_type='clustered', clusters=df['firm_id'])
+   print(res.first_stage)  # Check F-stat
+   ```
+
+4. Regression Discontinuity (RDD)
+
+   Exploits threshold-based rules (e.g., regulatory size thresholds).
+
+   ```stata
+   * ssc install rdrobust
+   rdrobust y running_var, c(threshold) p(1) kernel(triangular)
+   * Bandwidth selection: rdbwselect y running_var, c(threshold)
+   * McCrary density test for manipulation: rddensity running_var, c(threshold)
+   ```
+
+5. Standard Error Clustering
+
+   RULE OF THUMB (Petersen 2009):
+   - Firm-level panel: cluster by firm (absorbs within-firm correlation)
+   - If both firm and time correlation: double-cluster by firm and year
+   - State-level policy shocks: cluster by state
+   - Number of clusters should be ≥ 50 for reliable inference
+
+   NEVER use heteroskedasticity-robust SEs alone in panel data.
+   ALWAYS cluster at the level of treatment assignment or higher.
+
+─────────────────────────────────────────────────────────────────────────────
+ESTIMATION AND REGRESSION ANALYSIS
+─────────────────────────────────────────────────────────────────────────────
+
+1. Baseline Specification
+
+   Standard empirical finance regression:
+   y_{i,t} = β × X_{i,t} + γ × Controls_{i,t} + α_i + δ_t + ε_{i,t}
+
+   Where: α_i = entity FE, δ_t = time FE
+
+   Build up specifications progressively in your regression table:
+   - Column 1: OLS (no FE, no controls)
+   - Column 2: Add controls
+   - Column 3: Add entity FE
+   - Column 4: Add time FE
+   - Column 5: Add entity + time FE (preferred specification)
+
+2. Interaction Terms and Subsamples
+
+   ```stata
+   * Interaction with continuous variable
+   gen x1_x2 = x1 * x2
+   reghdfe y x1 x2 x1_x2 controls, absorb(firm_id year) cluster(firm_id)
+
+   * Or equivalently with factor notation
+   reghdfe y c.x1##c.x2 controls, absorb(firm_id year) cluster(firm_id)
+
+   * Subsample analysis (e.g., pre vs post reform)
+   reghdfe y x1 controls if year < 2018, absorb(firm_id year) cluster(firm_id)
+   reghdfe y x1 controls if year >= 2018, absorb(firm_id year) cluster(firm_id)
+   ```
+
+3. Economic Magnitude
+
+   CRITICAL: Always convert regression coefficients to economic magnitudes.
+   Do not just report statistical significance.
+
+   TEMPLATES:
+   - "A one-standard-deviation increase in X is associated with a
+     Y basis-point change in Z."
+   - "Moving from the 25th to the 75th percentile of X corresponds
+     to an increase in Y of $Z million."
+   - "The tax shield represents X% of average return on assets."
+
+   ```stata
+   * After regression, compute magnitudes
+   qui sum x1, detail
+   local sd_x1 = r(sd)
+   local iqr_x1 = r(p75) - r(p25)
+
+   * One-SD effect
+   display "1-SD effect on y: " _b[x1] * `sd_x1'
+   * IQR effect
+   display "IQR effect on y: " _b[x1] * `iqr_x1'
+   ```
+
+4. Nonlinear Models
+
+   ```stata
+   * Logit/Probit for binary outcomes
+   logit y_binary x1 controls, cluster(firm_id)
+   margins, dydx(x1)  /* Average marginal effects */
+
+   * Tobit for censored data (e.g., dividend payout)
+   tobit y_censored x1 controls, ll(0)
+
+   * Poisson pseudo-ML with HDFE (e.g., count outcomes, gravity)
+   ppmlhdfe y x1 controls, absorb(firm_id year) cluster(firm_id)
+   ```
+
+─────────────────────────────────────────────────────────────────────────────
+ROBUSTNESS CHECKS
+─────────────────────────────────────────────────────────────────────────────
+
+Every empirical finance paper must demonstrate that results are robust
+to alternative explanations. Each robustness check should address a
+SPECIFIC threat to identification.
+
+ROBUSTNESS CHECKLIST:
+
+□ Alternative variable definitions
+  - Different winsorization levels (0.5/99.5, 2/98, 5/95)
+  - Alternative measures of key variables (e.g., book vs market leverage)
+  - Different scaling (levels vs ratios vs logs)
+
+□ Alternative specifications
+  - Adding/removing control variables
+  - Different fixed effects structures (firm, year, firm×year, industry×year)
+  - Linear vs nonlinear functional forms
+
+□ Subsample analysis
+  - By firm size (quartiles or above/below median)
+  - By time period (pre/post regulation, pre/post crisis)
+  - By industry or sector
+  - Excluding financial firms (if applicable)
+
+□ Placebo and falsification tests
+  - Randomized treatment timing
+  - Pseudo-events (shift treatment date by ±N years)
+  - Outcome variables that should NOT be affected
+
+□ Sensitivity to outliers
+  - Different winsorization levels
+  - Trimming instead of winsorizing
+  - Excluding influential observations (DFBETAS)
+
+□ Alternative identification
+  - Different instruments (if IV)
+  - Different bandwidth (if RDD)
+  - Alternative control groups (if DiD)
+  - Oster (2019) bounds for coefficient stability
+
+□ Standard error robustness
+  - Alternative clustering levels
+  - Bootstrap standard errors
+  - Conley spatial SEs (if geographic variation)
+
+─────────────────────────────────────────────────────────────────────────────
+VISUALIZATION FOR FINANCE
+─────────────────────────────────────────────────────────────────────────────
+
+NOTE: In finance, tables are the primary presentation format (unlike
+science where figures dominate). However, visualization is critical
+for exploration and for illustrating key patterns.
+
+1. Time Series Plots
+
+   STATA:
+   ```stata
+   twoway (line agg_etr year, lcolor(blue) lwidth(medthick)) ///
+       (line median_etr year, lcolor(red) lpattern(dash)), ///
+       title("Effective Tax Rate Over Time") ///
+       ytitle("ETR (%)") xtitle("Year") ///
+       legend(order(1 "Aggregate" 2 "Median")) ///
+       xline(2008, lcolor(gray) lpattern(dash)) ///
+       xline(2018, lcolor(gray) lpattern(dash)) ///
+       text(0.35 2008 "GFC", place(e)) ///
+       text(0.35 2018 "TCJA", place(e)) ///
+       scheme(s2color)
+   graph export "figures/etr_timeseries.pdf", replace
+   ```
+
+   PYTHON:
+   ```python
+   fig, ax = plt.subplots(figsize=(12, 6))
+   ax.plot(df['year'], df['agg_etr'], 'b-', lw=2, label='Aggregate')
+   ax.plot(df['year'], df['median_etr'], 'r--', lw=1.5, label='Median')
+   ax.axvline(2008, color='gray', ls='--', alpha=0.7)
+   ax.axvline(2018, color='gray', ls='--', alpha=0.7)
+   ax.set_xlabel('Year')
+   ax.set_ylabel('ETR (%)')
+   ax.set_title('Effective Tax Rate Over Time')
+   ax.legend()
+   plt.tight_layout()
+   plt.savefig('figures/etr_timeseries.pdf', dpi=300, bbox_inches='tight')
+   ```
+
+2. Binscatter Plots
+
+   The workhorse visualization in empirical finance. Shows conditional
+   means after absorbing controls/FE.
+
+   STATA:
+   ```stata
+   * ssc install binscatter (or binsreg for modern version)
+   binscatter etr eq_assets, controls(i.year) nquantiles(50) ///
+       ytitle("Effective Tax Rate (%)") ///
+       xtitle("Equity / Assets (%)") ///
+       title("ETR vs Capital Ratio")
+   graph export "figures/binscatter_etr_equity.pdf", replace
+   ```
+
+3. Event Study Plots
+
+   ```stata
+   * After event study regression, plot coefficients
+   coefplot, keep(D_5 D_4 D_3 D_2 D0 D1 D2 D3 D4 D5) ///
+       vertical ///
+       yline(0, lcolor(red)) ///
+       xline(5.5, lcolor(gray) lpattern(dash)) ///
+       title("Event Study: Effect on Y") ///
+       ytitle("Coefficient") xtitle("Years Relative to Treatment") ///
+       ciopts(recast(rcap))
+   graph export "figures/event_study.pdf", replace
+   ```
+
+4. Kernel Density Plots
+
+   ```stata
+   * Compare distributions across groups
+   twoway (kdensity eq_assets if size_q == 1, lcolor(blue)) ///
+       (kdensity eq_assets if size_q == 4, lcolor(red)), ///
+       title("Capital Ratio by Bank Size") ///
+       legend(order(1 "Small" 2 "Large"))
+   ```
+
+5. Dual-Axis Plots
+
+   Use sparingly. Clearly label both axes. Consider whether two
+   separate panels would be clearer.
+
+─────────────────────────────────────────────────────────────────────────────
+TABLE FORMATTING AND PRESENTATION
+─────────────────────────────────────────────────────────────────────────────
+
+Tables are the primary output format in empirical finance.
+
+1. Summary Statistics Table
+
+   MUST INCLUDE: N, Mean, SD, p25, Median, p75 (and Min/Max if space allows)
+
+   STATA:
+   ```stata
+   * Using estout (ssc install estout)
+   estpost summarize assets equity roa etr leverage, detail
+   esttab using "tables/sumstats.tex", replace ///
+       cells("count mean sd p25 p50 p75") ///
+       label booktabs ///
+       title("Summary Statistics") ///
+       nomtitle nonumber
+   ```
+
+2. Regression Tables
+
+   REQUIRED ELEMENTS:
+   - Dependent variable clearly labeled in header
+   - Independent variables in rows
+   - Controls indicated (Yes/No row)
+   - Fixed effects indicated (Firm FE: Yes/No, Year FE: Yes/No)
+   - Clustering noted in table footer
+   - N and R-squared (within R² for FE models)
+   - Significance stars: * p<0.10, ** p<0.05, *** p<0.01
+
+   STATA:
+   ```stata
+   eststo clear
+   eststo: reghdfe y x1 controls, absorb(firm_id) cluster(firm_id)
+   eststo: reghdfe y x1 controls, absorb(firm_id year) cluster(firm_id)
+   eststo: reghdfe y x1 controls, absorb(firm_id year) cluster(firm_id year)
+
+   esttab using "tables/main_results.tex", replace ///
+       se star(* 0.10 ** 0.05 *** 0.01) ///
+       keep(x1) ///
+       stats(N r2_within, labels("Observations" "Within R²")) ///
+       indicate("Controls = controls" "Firm FE = 1.firm_id" ///
+                "Year FE = 1.year") ///
+       label booktabs ///
+       title("Main Results") ///
+       mtitles("(1)" "(2)" "(3)") ///
+       addnotes("Standard errors clustered by firm in columns 1-2" ///
+                "and by firm and year in column 3.")
+   ```
+
+   LaTeX TABLE TEMPLATE:
+   - Use booktabs: \toprule, \midrule, \bottomrule (NO vertical lines)
+   - Use threeparttable for table notes
+   - Use dcolumn or siunitx for decimal alignment
+   - Place significance stars: \sym{*}, \sym{**}, \sym{***}
+
+3. Table Notes Convention
+
+   Every table must have notes explaining:
+   - What the dependent variable is
+   - Sample period and restrictions
+   - What controls are included
+   - Fixed effects structure
+   - How standard errors are clustered
+   - Significance levels: *, **, ***
+
+─────────────────────────────────────────────────────────────────────────────
+WRITING CONVENTIONS FOR FINANCE
+─────────────────────────────────────────────────────────────────────────────
+
+1. Language and Tone
+
+   - Use hedging language: "consistent with" not "proves"
+   - "The evidence suggests" not "we demonstrate"
+   - "is associated with" for correlations, reserve causal language
+     for settings with strong identification
+   - Use "we" throughout (even single-authored papers)
+   - Present tense for established facts: "Table 3 shows..."
+   - Past tense for what you did: "We collected data from..."
+
+2. Paper Structure (Finance Convention)
+
+   ABSTRACT: ~100 words. State the main finding in the first sentence.
+
+   INTRODUCTION (3-5 pages):
+   - Paragraph 1: What do you do and what do you find? (THE PUNCHLINE)
+   - Paragraph 2-3: Why does this matter? (Motivation)
+   - Paragraph 4-5: How do you do it? (Identification, data)
+   - Paragraph 6: What are the main results?
+   - Paragraph 7-8: Literature positioning (brief, thematic)
+   - Final paragraph: Paper roadmap
+
+   NOTE: Finance embeds the literature review in the introduction.
+   A standalone "Literature Review" section is rare and signals weakness
+   unless the paper genuinely surveys a field.
+
+   DATA SECTION:
+   - Data sources with exact names and identifiers
+   - Sample construction with observation counts at each filter step
+   - Variable definitions table
+   - Summary statistics table
+
+   EMPIRICAL STRATEGY:
+   - Model specification with equation
+   - Identification argument (the most scrutinized section)
+   - Threats to identification and how you address them
+
+   RESULTS:
+   - Main results first
+   - Robustness subsection
+   - Heterogeneity analysis (who is most affected?)
+
+   CONCLUSION (1-2 pages):
+   - Do not overstate findings
+   - Acknowledge limitations honestly
+   - Suggest policy implications cautiously
+   - Brief future directions
+
+3. Journal Conventions
+
+   JEL Classification codes: Always include (e.g., G21, H25, E44)
+   Keywords: 3-5 terms
+
+   Top 3 journals:
+   - Journal of Finance (JF): ~60 pages, 100-word abstract
+   - Journal of Financial Economics (JFE): Double-blind review
+   - Review of Financial Studies (RFS): Chicago Manual of Style
+
+   Paper length: 40-60 pages including tables and appendices.
+   Tables typically placed at end of paper (not inline).
+
+═══════════════════════════════════════════════════════════════════════════════

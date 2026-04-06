@@ -128,6 +128,20 @@ class ConfigLoader:
         domain_config = config.get('domains', {}).get(domain, {})
         return domain_config.get('has_template', False)
 
+    def get_domain_paper_style(self, domain: str) -> Optional[str]:
+        """
+        Get the default paper style for a domain.
+
+        Args:
+            domain: Domain name
+
+        Returns:
+            Paper style name (e.g. 'ams', 'finance') or None if no default
+        """
+        config = self.get_domains_config()
+        domain_config = config.get('domains', {}).get(domain, {})
+        return domain_config.get('paper_style', None)
+
     def get_domain_display_name(self, domain: str) -> str:
         """
         Get the display name for a domain.

@@ -1,0 +1,220 @@
+%------------------------------------------------------------------------------
+% Finance Paper Template
+%------------------------------------------------------------------------------
+% Generic template compatible with Journal of Finance, JFE, and RFS
+% submissions. Uses standard article class with finance-appropriate
+% formatting. Adjust margins/spacing per target journal guidelines.
+%
+\documentclass[12pt]{article}
+
+%--- Page Layout (JF-style: 1" sides, 1.5" top/bottom) ---
+\usepackage[margin=1in, top=1.5in, bottom=1.5in]{geometry}
+\usepackage{setspace}
+\onehalfspacing  % JF uses 1.5 spacing; switch to \doublespacing for JFE
+
+%--- Bibliography ---
+\usepackage[authoryear,round,semicolon]{natbib}
+
+%--- Math ---
+\usepackage{amsmath,amssymb}
+
+%--- Tables ---
+\usepackage{booktabs}       % Professional tables (no vertical lines)
+\usepackage{tabularx}       % Tables with flexible column widths
+\usepackage{threeparttable} % Table notes
+\usepackage{dcolumn}        % Decimal-aligned columns in regression tables
+\usepackage{multirow}       % Spanning rows in tables
+\usepackage{siunitx}        % Number formatting and alignment
+\sisetup{
+  input-symbols = {()},
+  table-format = -1.3,
+  table-space-text-pre = (,
+  table-space-text-post = ),
+}
+
+%--- Figures ---
+\usepackage{graphicx}
+\usepackage{subcaption}
+
+%--- Other ---
+\usepackage[hidelinks]{hyperref}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{enumitem}
+\usepackage{xspace}
+\usepackage{float}
+
+%--- Custom Commands ---
+% Significance stars for regression tables
+\newcommand{\sym}[1]{^{#1}}
+
+% Decimal-aligned column type for regression output
+\newcolumntype{d}[1]{D{.}{.}{#1}}
+
+% Convenience: standard errors in parentheses
+\newcommand{\se}[1]{(#1)}
+
+%--- Document Info ---
+\title{Paper Title Here}
+\author{
+  Author One\thanks{Affiliation, email. We thank ...}
+  \and
+  Author Two\thanks{Affiliation, email.}
+}
+\date{\today}
+
+%------------------------------------------------------------------------------
+\begin{document}
+%------------------------------------------------------------------------------
+
+\maketitle
+
+%--- Abstract ---
+\begin{abstract}
+\noindent
+% ~100 words. State the main finding in the first sentence.
+We study ... using ... data. We find that ...
+Our results suggest that ...
+\end{abstract}
+
+\vspace{1em}
+\noindent\textit{JEL Classification:} G21, H25 \\
+\noindent\textit{Keywords:} keyword1, keyword2, keyword3
+
+\newpage
+
+%--- Introduction ---
+\section{Introduction}
+% 3-5 pages. Punchline in first paragraph. Embed literature review.
+% Structure: What/Why/How/Results/Literature/Roadmap
+
+
+%--- Institutional Background (optional) ---
+\section{Institutional Background}
+% Regulatory context, market structure, policy changes relevant to study
+
+
+%--- Data ---
+\section{Data}
+
+\subsection{Data Sources}
+% Name exact data sources, identifiers, and coverage periods
+
+\subsection{Sample Construction}
+% Document all filters and their impact on sample size
+
+\subsection{Variable Definitions}
+% Table of variable names, definitions, and sources
+
+\subsection{Summary Statistics}
+
+% Example summary statistics table
+\begin{table}[htbp]
+\centering
+\begin{threeparttable}
+\caption{Summary Statistics}
+\label{tab:sumstats}
+\begin{tabular}{lccccccc}
+\toprule
+Variable & N & Mean & SD & p25 & Median & p75 \\
+\midrule
+Assets (\$B)      & 100,000 & 2.45  & 5.12  & 0.15  & 0.52  & 1.85  \\
+Equity/Assets (\%) & 100,000 & 10.23 & 3.45  & 8.12  & 9.87  & 11.54 \\
+ROA (\%)           & 100,000 & 1.05  & 0.62  & 0.72  & 1.02  & 1.35  \\
+ETR (\%)           & 85,000  & 25.4  & 8.7   & 20.1  & 26.3  & 31.2  \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}[flushleft]
+\small
+\item \textit{Notes:} This table reports summary statistics for the main
+analysis sample. The sample covers [period]. All continuous variables are
+winsorized at the 1st and 99th percentiles.
+\end{tablenotes}
+\end{threeparttable}
+\end{table}
+
+
+%--- Empirical Strategy ---
+\section{Empirical Strategy}
+
+\subsection{Identification}
+% The most scrutinized section. Clearly articulate:
+% (1) What variation identifies the effect
+% (2) Why this variation is plausibly exogenous
+% (3) Threats to identification
+
+\subsection{Specification}
+% Formal model specification:
+% y_{i,t} = \beta X_{i,t} + \gamma Controls_{i,t} + \alpha_i + \delta_t + \varepsilon_{i,t}
+
+
+%--- Results ---
+\section{Results}
+
+\subsection{Main Results}
+
+% Example regression table
+\begin{table}[htbp]
+\centering
+\begin{threeparttable}
+\caption{Main Results: Effect of X on Y}
+\label{tab:main}
+\begin{tabular}{ld{3}d{3}d{3}}
+\toprule
+ & \multicolumn{1}{c}{(1)} & \multicolumn{1}{c}{(2)} & \multicolumn{1}{c}{(3)} \\
+ & \multicolumn{1}{c}{OLS} & \multicolumn{1}{c}{FE} & \multicolumn{1}{c}{FE} \\
+\midrule
+Key Variable     & 0.045\sym{***} & 0.032\sym{**}  & 0.028\sym{**}  \\
+                 & \se{0.012}     & \se{0.014}     & \se{0.013}     \\[0.5em]
+Control 1        & 0.123\sym{***} & 0.098\sym{**}  & 0.087\sym{**}  \\
+                 & \se{0.034}     & \se{0.041}     & \se{0.039}     \\
+\midrule
+Controls         & \multicolumn{1}{c}{No}  & \multicolumn{1}{c}{Yes} & \multicolumn{1}{c}{Yes} \\
+Firm FE          & \multicolumn{1}{c}{No}  & \multicolumn{1}{c}{Yes} & \multicolumn{1}{c}{Yes} \\
+Year FE          & \multicolumn{1}{c}{No}  & \multicolumn{1}{c}{No}  & \multicolumn{1}{c}{Yes} \\
+\midrule
+Observations     & \multicolumn{1}{c}{100,000} & \multicolumn{1}{c}{100,000} & \multicolumn{1}{c}{100,000} \\
+Within $R^2$     & \multicolumn{1}{c}{0.05}    & \multicolumn{1}{c}{0.12}    & \multicolumn{1}{c}{0.15}    \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}[flushleft]
+\small
+\item \textit{Notes:} This table reports OLS and fixed-effects estimates of
+the effect of [Key Variable] on [Dependent Variable]. The sample covers
+[period]. All continuous variables are winsorized at the 1st and 99th
+percentiles. Standard errors clustered at the firm level are reported in
+parentheses. \sym{*}~$p<0.10$, \sym{**}~$p<0.05$, \sym{***}~$p<0.01$.
+\end{tablenotes}
+\end{threeparttable}
+\end{table}
+
+\subsection{Robustness}
+% Alternative specifications, samples, variable definitions
+% Address specific threats to identification
+
+\subsection{Heterogeneity}
+% Who is most affected? By size, time period, type
+
+
+%--- Conclusion ---
+\section{Conclusion}
+% 1-2 pages. Do not overstate. Acknowledge limitations.
+
+
+%--- References ---
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+%--- Appendix ---
+\newpage
+\appendix
+
+\section{Variable Definitions}
+\label{app:variables}
+% Comprehensive table: Variable, Definition, Source
+
+\section{Additional Tables and Figures}
+\label{app:additional}
+% Robustness tables, supplementary figures
+
+\end{document}

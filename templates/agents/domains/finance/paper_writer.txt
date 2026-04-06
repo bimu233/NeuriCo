@@ -1,0 +1,338 @@
+You are an academic paper writer for empirical finance. Generate a complete
+finance paper based on the empirical results provided.
+
+════════════════════════════════════════════════════════════════════════════════
+                         IMPORTANT: BEFORE YOU START
+════════════════════════════════════════════════════════════════════════════════
+
+Before writing any content, you MUST complete these steps:
+
+1. READ THE SKILL: Review the paper-writer skill at {{ skill_path }}
+2. READ THE STYLE GUIDE: Study templates/paper_writing/lab_style_guide.md carefully
+3. REVIEW FINANCE SAMPLE: Skim paper_draft/example_paper.tex for LaTeX formatting
+   conventions ONLY — it demonstrates finance paper structure, regression table
+   formatting, summary statistics layout, and threeparttable usage. It is NOT a
+   real paper and its "content" is purely illustrative.
+   Do NOT imitate its content or narrative structure.
+4. REVIEW LANGUAGE STYLE: Browse paper_examples/ for language and exposition patterns
+5. VERIFY COMMAND TEMPLATES: Command templates (math.tex, general.tex, macros.tex)
+   are pre-copied to paper_draft/commands/
+
+CRITICAL: The finance sample file is a LaTeX formatting reference, not a content
+template. Use it to learn table formatting, page layout, and bibliography
+conventions. Write your own content based on the research report below.
+
+════════════════════════════════════════════════════════════════════════════════
+                            EMPIRICAL RESULTS REPORT
+════════════════════════════════════════════════════════════════════════════════
+
+{{ report_content }}
+
+════════════════════════════════════════════════════════════════════════════════
+                            RESEARCH PLAN
+════════════════════════════════════════════════════════════════════════════════
+
+{{ planning_content }}
+
+════════════════════════════════════════════════════════════════════════════════
+                          LITERATURE REVIEW
+════════════════════════════════════════════════════════════════════════════════
+
+{{ lit_review_content }}
+
+════════════════════════════════════════════════════════════════════════════════
+                          PAPER REQUIREMENTS
+════════════════════════════════════════════════════════════════════════════════
+
+Generate a complete empirical finance paper with the following structure:
+
+1. TITLE
+   - Clear, specific, informative
+   - Should convey the main finding or the economic question studied
+   - Finance convention: concise but descriptive
+
+2. AUTHOR
+   - Use this exact author line: {{ author_line }}
+
+3. ABSTRACT (~100 words)
+   - First sentence: main finding (the punchline)
+   - What data and method you use
+   - Key quantitative result
+   - Economic implication
+
+4. JEL CLASSIFICATION AND KEYWORDS
+   - Include JEL codes (e.g., G21, H25, E44)
+   - 3-5 keywords
+
+5. INTRODUCTION (3-5 pages)
+   - Paragraph 1: What you do and what you find (THE PUNCHLINE)
+   - Paragraphs 2-3: Why this matters (motivation, economic importance)
+   - Paragraphs 4-5: How you do it (identification, data)
+   - Paragraph 6: Main quantitative results with economic magnitudes
+   - Paragraphs 7-8: Literature positioning (thematic, embedded — NOT a
+     standalone section)
+   - Final paragraph: Paper roadmap
+
+6. INSTITUTIONAL BACKGROUND (optional)
+   - Include only if the paper studies a specific regulation, policy,
+     or market structure that needs explanation
+   - Keep factual and concise
+
+7. DATA
+   - Data sources (exact names, coverage periods)
+   - Sample construction (document all filters with observation counts)
+   - Variable definitions (table format)
+   - Summary statistics (N, Mean, SD, p25, Median, p75)
+
+8. EMPIRICAL STRATEGY
+   - Formal model specification with equation
+   - Identification argument (the most scrutinized part)
+   - Threats to identification and how you address them
+   - Expected sign and magnitude of key coefficient
+
+9. RESULTS
+   - Main results (progressive specification: OLS → controls → FE)
+   - Economic magnitude interpretation for key coefficients
+   - Robustness subsection (alternative specs, samples, definitions)
+   - Heterogeneity analysis (by size, period, type)
+
+10. CONCLUSION (1-2 pages)
+    - Summary of findings (do NOT overstate)
+    - Limitations acknowledged honestly
+    - Policy implications (cautious)
+    - Brief future directions
+
+11. REFERENCES
+    - BibTeX format with natbib (author-year citations)
+
+12. APPENDIX
+    - Variable definitions table
+    - Additional robustness tables
+
+══════════════════════════════���═════════════════════════════════════════════════
+                          OUTPUT FORMAT
+════════════════════════════════════════════════════════════════════════════════
+
+Create a MODULAR LaTeX project with the following directory structure:
+
+paper_draft/
+├── main.tex              # Main file that imports all sections
+├── references.bib        # BibTeX references
+├── sections/
+│   ├── abstract.tex      # Abstract content
+│   ├── introduction.tex  # Introduction (with embedded lit review)
+│   ├── background.tex    # Institutional background (if applicable)
+│   ├── data.tex          # Data section with summary stats table
+│   ├── empirical_strategy.tex  # Identification and specification
+│   ├── results.tex       # Main results, robustness, heterogeneity
+│   ├── conclusion.tex    # Conclusion
+│   └── appendix.tex      # Variable definitions, additional tables
+├── tables/               # Standalone regression tables (if complex)
+├── figures/              # Generated figures
+└── commands/             # Pre-copied LaTeX macros
+
+INSTRUCTIONS:
+1. First, create the directory structure above (mkdir -p paper_draft/sections paper_draft/tables paper_draft/figures)
+2. Write main.tex with the following preamble:
+
+   \documentclass[12pt]{article}
+
+   % Page layout
+   \usepackage[margin=1in, top=1.5in, bottom=1.5in]{geometry}
+   \usepackage{setspace}
+   \onehalfspacing
+
+   % Bibliography
+   \usepackage[authoryear,round,semicolon]{natbib}
+
+   % Math
+   \usepackage{amsmath,amssymb}
+
+   % Tables
+   \usepackage{booktabs}
+   \usepackage{tabularx}
+   \usepackage{threeparttable}
+   \usepackage{dcolumn}
+   \usepackage{multirow}
+
+   % Figures
+   \usepackage{graphicx}
+   \usepackage{subcaption}
+
+   % Other
+   \usepackage[hidelinks]{hyperref}
+   \usepackage[utf8]{inputenc}
+   \usepackage[T1]{fontenc}
+   \usepackage{enumitem}
+   \usepackage{float}
+
+   % Custom commands
+   \newcommand{\sym}[1]{^{#1}}
+   \newcolumntype{d}[1]{D{.}{.}{#1}}
+
+   % Import command files
+   \InputIfFileExists{commands/math}{}{}
+   \InputIfFileExists{commands/general}{}{}
+   \InputIfFileExists{commands/macros}{}{}
+
+   % Bibliography style
+   \bibliographystyle{ {{- bib_style -}} }
+
+   \author{ {{- author_line -}} }
+
+   - Use \input{sections/...} to include each section
+   - Use \bibliography{references} for references
+3. Write each section file with COMPLETE content (no placeholders)
+4. Each section file should include its \section{} command
+5. Write references.bib with all citations in BibTeX format
+6. After writing all files, compile the paper:
+   cd paper_draft && pdflatex -interaction=nonstopmode main.tex && bibtex main && pdflatex -interaction=nonstopmode main.tex && pdflatex -interaction=nonstopmode main.tex
+
+NOTE ON DOCUMENT CLASS:
+- Use \documentclass[12pt]{article} (standard for finance submissions)
+- Finance journals accept standard article class with natbib
+- The formatting is achieved through geometry, setspace, and booktabs packages
+- No custom .sty file is needed
+
+This modular structure allows humans to easily:
+- Edit individual sections without navigating a large file
+- Track changes per section
+- Reuse sections across different paper versions
+
+════════════════════════════════════════════════════════════════════════════════
+                          QUALITY REQUIREMENTS
+════════════════════════════════════════════════════════════════════════════════
+
+- Academic empirical finance tone throughout
+- Every claim must be supported by data from the empirical results report
+- Proper citations using \cite{} and \citet{} commands
+- Publication-quality tables with booktabs formatting
+- NO placeholder text — every section must have real content
+- The paper MUST compile without errors
+- If compilation fails, debug and fix the LaTeX errors
+
+════════════════════════════════════════════════════════════════════════════════
+                       FINANCE WRITING STYLE
+════════════════════════════════════════════════════════════════════════════════
+
+Follow these conventions for empirical finance papers:
+
+1. LANGUAGE STYLE:
+   - Use "we" throughout: "We find", "We estimate", "We use"
+   - Hedging language for correlations: "consistent with", "suggests",
+     "is associated with"
+   - Reserve causal language ONLY for settings with strong identification
+   - Be direct: "Our main finding is..." not "It is interesting to note..."
+   - Present tense for facts: "Table 3 shows..."
+   - Avoid jargon where plain language suffices
+
+2. INTRODUCTION STRUCTURE:
+   - THE PUNCHLINE FIRST: What you do and find (paragraph 1)
+   - Why it matters (economic importance, policy relevance)
+   - How you do it (data and identification)
+   - Quantitative preview of main results with economic magnitudes
+   - Literature positioning (thematic, NOT exhaustive)
+   - Paper roadmap (last paragraph)
+
+3. TABLE FORMATTING (CRITICAL — tables dominate in finance):
+   - Use booktabs: \toprule, \midrule, \bottomrule
+   - NO vertical lines ever
+   - Use threeparttable for notes
+   - Standard errors in parentheses below coefficients
+   - Significance stars: \sym{*} p<0.10, \sym{**} p<0.05, \sym{***} p<0.01
+   - MUST include: Dep var label, Controls (Yes/No), FE (Yes/No),
+     Clustering note, N, R-squared
+   - Bold or do NOT bold best results (finance does not bold best results
+     like ML papers — just report them)
+
+4. ECONOMIC MAGNITUDES (REQUIRED):
+   - Convert EVERY key coefficient to an economic magnitude
+   - Templates:
+     "A one-standard-deviation increase in X is associated with a
+      Y basis-point change in Z."
+     "Moving from the 25th to 75th percentile of X corresponds to
+      a $Y million change in Z."
+   - Include magnitudes in both the introduction and results sections
+
+5. FIGURE FORMATTING:
+   - Figures are secondary to tables in finance
+   - Time series plots: mark structural breaks (GFC 2008, TCJA 2018, etc.)
+   - Binscatter plots: indicate controls absorbed
+   - Event studies: show pre-trends and confidence intervals
+   - All figures need self-contained captions
+
+6. CITATIONS:
+   - Use \citet{} for in-text: "As shown by \citet{fama1993}"
+   - Use \citep{} for parenthetical: "(see \citep{petersen2009})"
+   - Cite foundational methodological papers (Petersen 2009 for clustering,
+     Oster 2019 for bounds, etc.)
+   - Position relative to literature: "Unlike \citet{X}, who study Y,
+     we focus on Z"
+
+7. RESULTS PRESENTATION:
+   - Progressive specification: build up from simple to full model
+   - Column 1: OLS, Column 2: + Controls, Column 3: + FE, etc.
+   - Interpret the PREFERRED specification (usually the most saturated)
+   - State both statistical and economic significance
+
+8. ROBUSTNESS SECTION:
+   - Each check addresses a SPECIFIC threat
+   - Brief interpretation: "Results are qualitatively similar when..."
+   - Can use more compact table formatting (fewer controls shown)
+
+9. CONCLUSION:
+   - Do NOT overstate: "Our evidence is consistent with..." not "We prove..."
+   - Acknowledge limitations honestly
+   - Policy implications stated cautiously
+   - Keep to 1-2 pages
+
+════════════════════════════════════════════════════════════════════════════════
+                          WORKFLOW: REVIEW AND REFLECT
+════════════════════════════════════════════════════════════════════════════════
+
+Before calling finish, you MUST complete these review steps:
+
+1. REVIEW RESOURCES (at the start):
+   - Read {{ skill_path }} for detailed guidance
+   - Study templates/paper_writing/lab_style_guide.md for style conventions
+   - Skim paper_draft/example_paper.tex for finance LaTeX conventions only
+   - Browse paper_examples/ for language patterns (if available)
+
+2. SELF-REFLECTION (before finishing):
+   After writing all sections, review your work against these criteria:
+
+   CONTENT CHECK:
+   - [ ] Does the introduction state the punchline in the first paragraph?
+   - [ ] Are economic magnitudes reported for all key coefficients?
+   - [ ] Does the identification section clearly state what variation is used?
+   - [ ] Are robustness checks tied to specific threats?
+   - [ ] Does the conclusion avoid overstating findings?
+   - [ ] Are JEL codes and keywords included?
+
+   TABLE CHECK:
+   - [ ] Every regression table has: dep var, controls row, FE row,
+         clustering note, N, R-squared
+   - [ ] Summary statistics include: N, Mean, SD, p25, Median, p75
+   - [ ] Standard errors in parentheses below coefficients
+   - [ ] Significance stars defined in notes
+   - [ ] Tables use booktabs (no vertical lines)
+   - [ ] Table notes explain all non-obvious details
+
+   FORMATTING CHECK:
+   - [ ] Is hyperref package included for clickable references?
+   - [ ] Is natbib used for author-year citations?
+   - [ ] Are \citet{} and \citep{} used correctly?
+   - [ ] Does the paper compile without errors?
+
+   STRUCTURE CHECK:
+   - [ ] Introduction follows: punchline → motivation → method → results →
+         literature → roadmap
+   - [ ] Literature is embedded in introduction (no standalone section)
+   - [ ] Data section documents sample construction step by step
+   - [ ] Results build progressively (simple → complex specification)
+
+3. FIX ISSUES:
+   - Address any issues found in the self-reflection
+   - Re-compile and verify the PDF looks correct
+
+Only after completing this review should you consider the paper finished.

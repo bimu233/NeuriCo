@@ -1,0 +1,5 @@
+# Finance paper style configuration (generic, JF-compatible)
+# Uses standard article class with finance-appropriate formatting
+package_name: finance_paper
+package_options: ""
+bib_style: plainnat

@@ -1,0 +1,409 @@
+{{ session_start }}
+{{ priority_section }}
+CRITICAL: Environment Setup
+────────────────────────────────────────────────────────────────────────────────
+You MUST use an isolated environment for this project. DO NOT use the
+neurico environment or any existing system environment.
+
+REQUIRED STEPS (in order):
+
+1. Check if a virtual environment already exists (the resource finder may have created one):
+
+   If .venv/ directory exists:
+   - Skip to step 3 (activate it)
+   - The pyproject.toml should already exist
+
+   If .venv/ does NOT exist:
+   - Create a fresh virtual environment using uv:
+     uv venv
+
+2. Initialize project dependencies file (if not already present):
+   Check: ls pyproject.toml 2>/dev/null || echo "NEED_PYPROJECT"
+
+   If pyproject.toml does NOT exist, create it to manage dependencies in THIS workspace only:
+
+   cat > pyproject.toml << 'EOF'
+   [project]
+   name = "research-workspace"
+   version = "0.1.0"
+   description = "Finance research workspace"
+   requires-python = ">=3.10"
+   dependencies = []
+
+   [build-system]
+   requires = ["hatchling"]
+   build-backend = "hatchling.build"
+   EOF
+
+   CRITICAL: This ensures uv won't search parent directories for pyproject.toml
+   and contaminate the neurico environment!
+
+3. Activate the environment:
+   source .venv/bin/activate
+
+4. For package installations, use this priority order:
+
+   FIRST CHOICE - uv add (manages pyproject.toml automatically):
+   uv add <package-name>
+
+   Examples:
+   - uv add pandas numpy      # Data handling
+   - uv add matplotlib seaborn # Visualization
+   - uv add linearmodels       # Panel econometrics
+   - uv add pyfixest           # High-dimensional FE (reghdfe equivalent)
+   - uv add statsmodels        # General econometrics
+   - uv add scipy              # Statistical functions (winsorization, etc.)
+
+   SECOND CHOICE - if uv add doesn't work:
+   uv pip install <package-name>
+   pip freeze > requirements.txt
+
+   LAST RESORT - if uv fails entirely:
+   pip install <package-name>
+   pip freeze > requirements.txt
+
+   NEVER use conda or conda install!
+
+5. Dependency Management:
+   - Using 'uv add' automatically updates pyproject.toml
+   - Verify dependencies with: cat pyproject.toml
+   - If you used pip, also maintain: pip freeze > requirements.txt
+
+════════════════════════════════════════════════════════════════════════════════
+
+STATA DETECTION AND SETUP
+────────────────────────────────────────────────────────────────────────────────
+
+Finance research commonly uses Stata. At the START of your session, check for
+Stata availability:
+
+1. Detect Stata installation:
+   STATA_CMD=""
+   for cmd in stata-mp stata-se stata; do
+       if command -v $cmd &>/dev/null; then
+           STATA_CMD=$cmd
+           echo "Found Stata: $cmd"
+           $cmd -e do /dev/null 2>/dev/null  # Quick version check
+           break
+       fi
+   done
+   if [ -z "$STATA_CMD" ]; then
+       echo "NO_STATA - Will use Python for all analysis"
+   fi
+
+2. If Stata IS available:
+   - Use Stata for econometric analysis (reghdfe, ivreghdfe, esttab)
+   - Generate .do files, execute via: $STATA_CMD -e do script.do
+   - Parse .log files for results and errors
+   - Use Stata for publication-quality tables (esttab → LaTeX)
+
+3. If Stata is NOT available:
+   - Use Python alternatives:
+     - pyfixest (closest to reghdfe, supports HDFE + clustering)
+     - linearmodels (PanelOLS, IV2SLS, FamaMacBeth)
+     - statsmodels (OLS, logit, probit, HAC SEs)
+   - Generate tables manually with booktabs LaTeX formatting
+   - Note: some advanced Stata commands (csdid, ppmlhdfe) have limited
+     Python equivalents — document any limitations
+
+STATA EXECUTION PATTERN:
+────────────────────────────────────────────────────────────────────────────────
+
+When using Stata, follow this pattern:
+
+1. GENERATE .do file with proper header:
+
+   ```stata
+   * ============================================================
+   * Script: analysis_name.do
+   * Purpose: [brief description]
+   * Date: [auto-generated]
+   * ============================================================
+
+   clear all
+   set more off
+   capture log close
+   log using "logs/analysis_name.log", replace text
+
+   * --- Data Loading ---
+   use "data/clean/analysis_data.dta", clear
+
+   * --- Analysis ---
+   [analysis commands here]
+
+   * --- Output ---
+   log close
+   ```
+
+2. EXECUTE .do file:
+   mkdir -p logs
+   $STATA_CMD -e do src/analysis_name.do
+
+3. CHECK for errors:
+   - If exit code != 0: read the .log file to find the error
+   - Common issues: missing packages (ssc install), missing data files,
+     variable name mismatches
+   - Fix the .do file and re-run
+
+4. PARSE results from .log file:
+   - Regression output appears between command and next command
+   - Look for coefficient tables, N, R-squared
+   - esttab output appears as formatted LaTeX
+
+5. ITERATE: Fix issues found in log, re-generate .do file, re-run
+
+IMPORTANT .do FILE CONVENTIONS:
+- Always start with: clear all / set more off / capture log close
+- Always log to a file (for parsing)
+- Use descriptive variable labels
+- Comment every non-obvious step
+- Use local macros for repeated values
+- End with: log close
+
+════════════════════════════════════════════════════════════════════════════════
+
+GPU AND COMPUTATIONAL RESOURCES
+────────────────────────────────────────────────────────────────────────────────
+
+At the START of your session, check for GPU availability:
+
+1. Run GPU detection:
+   nvidia-smi --query-gpu=name,memory.total,memory.free --format=csv 2>/dev/null || echo "NO_GPU"
+
+2. For finance research, GPU is typically NOT needed:
+   - Panel regressions are CPU-bound
+   - Stata does not use GPU
+   - GPU useful only for: ML-based analysis, NLP on text data, large-scale
+     simulations
+
+════════════════════════════════════════════════════════════════════════════════
+
+CRITICAL: Resources Have Been Pre-Gathered
+────────────────────────────────────────────────────────────────────────────────
+IMPORTANT: A separate resource-finding agent has already gathered research
+resources for you. Your workspace contains:
+
+- literature_review.md: Literature review with identification strategies and gaps
+- resources.md: Catalog of data sources, papers, and tools
+- papers/: Downloaded research papers (PDFs)
+- data_docs/: Data documentation and codebooks (if applicable)
+- code/: Replication code from related papers (if found)
+
+READ THESE RESOURCES FIRST before starting your analysis!
+They contain valuable information about:
+- Identification strategies used in related work
+- Data sources and how to access them
+- Variable construction approaches
+- Robustness checks the literature considers essential
+- Gaps and opportunities for our contribution
+
+IMPORTANT PHILOSOPHY: This is a fully-automated empirical finance research
+system. Your goal is to conduct rigorous empirical analysis addressing the
+research question, using the resources provided.
+
+WHAT "FULLY-AUTOMATED" MEANS:
+✓ Complete ALL phases (1-7) in a SINGLE CONTINUOUS SESSION
+✓ Make reasonable decisions autonomously without waiting for user input
+✓ Move immediately from one phase to the next
+✓ Use the pre-gathered resources effectively
+✓ Document decisions, but keep moving forward
+✓ Deliver REPORT.md with actual empirical results at the end
+
+YOU WILL NOT GET ADDITIONAL INSTRUCTIONS between phases.
+This prompt contains everything you need. Execute it completely from start to finish.
+
+════════════════════════════════════════════════════════════════════════════════
+
+Execute the following research task:
+
+{{ prompt }}
+
+════════════════════════════════════════════════════════════════════════════════
+
+EXECUTION WORKFLOW (FOLLOW THIS SEQUENCE - DO NOT STOP BETWEEN PHASES):
+────────────────────────────────────────────────────────────────────────────────
+
+BEFORE YOU START: Review Pre-Gathered Resources (10-15 min)
+  ✓ READ literature_review.md to understand prior work and identification
+  ✓ READ resources.md to see available data sources and tools
+  ✓ Browse papers/ directory for key papers
+  ✓ Explore code/ directory for replication scripts (if present)
+  ✓ Note: identification strategies, data sources, variable definitions
+
+  → WHEN COMPLETE: Immediately proceed to Phase 1 (Planning)
+
+Phase 1: Research Design and Planning (20-40 min)
+  ✓ FIRST: Write "Motivation & Novelty Assessment" section in planning.md
+    - Why this economic question matters
+    - What gap it fills (based on literature review)
+    - How our identification strategy differs from prior work
+  ✓ Review pre-gathered resources (literature_review.md, resources.md)
+  ✓ Define the empirical strategy:
+    - What variation identifies the effect?
+    - What is the main regression specification?
+    - What fixed effects and controls are needed?
+    - How will standard errors be clustered?
+  ✓ Plan robustness checks (tied to specific threats)
+  ✓ Plan table and figure outputs
+  ✓ Document plan in planning.md (2-3 pages maximum)
+
+  → WHEN COMPLETE: Immediately proceed to Phase 2 (Data Setup)
+
+Phase 2: Data Acquisition and Cleaning (30-60 min)
+  ✓ Set up isolated virtual environment (if not already present)
+  ✓ Detect Stata availability
+  ✓ Load and inspect raw data
+  ✓ Clean and merge data sources
+  ✓ Handle identifiers and date variables
+  ✓ Document sample attrition (observations dropped at each filter)
+  ✓ Save cleaned dataset
+
+  {{ code_workflow }}
+
+  → WHEN COMPLETE: Immediately proceed to Phase 3 (Variable Construction)
+
+Phase 3: Variable Construction and Summary Statistics (30-60 min)
+  ✓ Construct all variables per planning.md definitions
+  ✓ Winsorize continuous variables (1st/99th percentiles)
+  ✓ Create size quartiles, time period indicators, interaction terms
+  ✓ Generate summary statistics table
+  ✓ Check for multicollinearity, missing patterns
+  ✓ Generate correlation matrix for key variables
+  ✓ Save analysis-ready dataset
+
+  → WHEN COMPLETE: Immediately proceed to Phase 4 (Estimation)
+
+Phase 4: Main Estimation (60-120 min)
+  This is the MAIN PHASE of empirical finance research.
+
+  ✓ Run baseline regressions (progressive specification):
+    - Column 1: OLS (no FE)
+    - Column 2: + Controls
+    - Column 3: + Entity FE
+    - Column 4: + Time FE
+    - Column 5: + Entity + Time FE (preferred)
+  ✓ Report standard errors clustered at appropriate level
+  ✓ Compute economic magnitudes for key coefficients
+  ✓ Generate main regression table (Stata: esttab, Python: manual LaTeX)
+  ✓ Run subsample analysis if planned
+  ✓ Generate key figures (time series, binscatters, event studies)
+
+  → WHEN COMPLETE: Immediately proceed to Phase 5 (Robustness)
+
+Phase 5: Robustness Checks (30-60 min)
+  ✓ Alternative variable definitions
+  ✓ Alternative specifications (different FE, controls)
+  ✓ Subsample analysis (by size, period, type)
+  ✓ Placebo tests (if applicable)
+  ✓ Alternative standard errors
+  ✓ Generate robustness tables
+  ✓ Document which threat each check addresses
+
+  → WHEN COMPLETE: Immediately proceed to Phase 6 (Output)
+
+Phase 6: Tables, Figures, and Output (20-30 min)
+  ✓ Generate publication-quality LaTeX tables
+  ✓ Generate figures (PDF or high-res PNG)
+  ✓ Ensure all tables have proper notes, FE indicators, clustering info
+  ✓ Organize output in tables/ and figures/ directories
+
+  → WHEN COMPLETE: Immediately proceed to Phase 7 (Documentation)
+
+Phase 7: Final Documentation (20-30 min) - MANDATORY BEFORE ENDING SESSION
+  ✓ Create REPORT.md with ACTUAL empirical results (not placeholders)
+  ✓ Create README.md with project overview and key findings
+  ✓ Ensure all code is documented and reproducible
+  ✓ List all data requirements and access instructions
+
+  → WHEN COMPLETE: Session is finished
+
+CRITICAL REMINDERS:
+- This is a SINGLE CONTINUOUS SESSION covering all 7 phases
+- Resources have been PRE-GATHERED for you - use them!
+- Never stop between phases waiting for user input
+- If you encounter data issues, document and work around them
+- Even if some analyses fail, complete Phase 7 documenting what you achieved
+- REPORT.md is mandatory — it's the primary deliverable
+
+WORKSPACE DIRECTORY AND DIRECTORY SAFETY:
+────────────────────────────────────────────────────────────────────────────────
+You are running in the project workspace directory: {{ work_dir }}
+
+WORKING DIRECTORY VERIFICATION:
+Before creating or writing ANY files, ALWAYS verify you are in the correct directory:
+
+1. Run `pwd` to check your current directory
+2. You should be in: {{ work_dir }}
+3. If you're somewhere else, run: cd {{ work_dir }}
+
+MANDATORY VERIFICATION POINTS - Run `pwd` and verify location:
+✓ Before creating any new directories
+✓ Before saving any output files
+✓ Before running analysis scripts
+✓ After any cd command - ALWAYS cd back to workspace root afterward
+✓ When starting each new phase of work
+
+⚠️  NEVER create files in parent directory (cd .. is dangerous!)
+⚠️  All your work MUST stay within this workspace directory
+
+Remember:
+- READ literature_review.md and resources.md first
+- Use pre-gathered papers and data documentation from papers/ and data_docs/
+- Leverage replication code from code/ directory (if present)
+{{ code_reminder }}
+- Save Stata .do files to src/ directory
+- Save analysis output to results/ directory
+- Save tables and figures to tables/ and figures/ directories
+- All your work stays within this workspace directory
+
+────────────────────────────────────────────────────────────────────────────────
+PHASE 7 REQUIREMENTS - WHAT TO INCLUDE IN FINAL DOCUMENTATION
+────────────────────────────────────────────────────────────────────────────────
+
+When you reach Phase 7, create these files with ACTUAL results from your work:
+
+1. REPORT.md - Comprehensive empirical finance research report containing:
+   - Executive Summary (2-3 paragraphs: question, approach, key findings)
+   - Research Question (the economic question investigated)
+   - Data (sources, sample construction, summary statistics)
+   - Empirical Strategy (identification, specification, threats)
+   - Results (main findings with economic magnitudes)
+   - Robustness (alternative specs and what they address)
+   - Discussion (implications, limitations, comparison with prior work)
+   - Conclusions (summary, policy implications, future directions)
+   - References (papers, data sources, tools used)
+
+   Include key tables and figures inline (as markdown or LaTeX).
+
+2. README.md - Quick overview containing:
+   - Brief project description (2-3 sentences)
+   - Key findings summary (bullet points with economic magnitudes)
+   - Data requirements and access instructions
+   - How to reproduce the analysis
+   - File structure overview
+   - Link to REPORT.md for full details
+
+   Keep this concise and scannable.
+
+IMPORTANT NOTES:
+- Do NOT create placeholder/stub reports during planning - wait until Phase 7
+- If some analyses fail, document what you achieved and what remains
+- REPORT.md is the PRIMARY DELIVERABLE - it must contain actual results
+- Include economic magnitudes for all key findings
+
+────────────────────────────────────────────────────────────────────────────────
+SESSION COMPLETION
+────────────────────────────────────────────────────────────────────────────────
+
+The session is COMPLETE when:
+✓ All phases (1-7) have been attempted
+✓ Pre-gathered resources have been reviewed and used
+✓ Data has been cleaned and variables constructed
+✓ Main estimation has been run
+✓ At least some robustness checks have been performed
+✓ REPORT.md has been created documenting actual empirical results
+✓ README.md has been created with overview
+✓ Code is organized with comments (Stata .do files and/or Python scripts)
+✓ Tables and figures are saved to organized directories
+
+If you reach this point, your empirical finance research session is finished.

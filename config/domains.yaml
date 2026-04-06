@@ -51,6 +51,13 @@ domains:
     name: "Mathematics"
     description: "Pure and applied mathematics: algebra, analysis, topology, number theory, combinatorics, geometry, proofs"
     has_template: true
+    paper_style: ams
+
+  finance:
+    name: "Finance"
+    description: "Empirical finance: banking, corporate finance, asset pricing, financial regulation, panel data analysis"
+    has_template: true
+    paper_style: finance
 
   scientific_computing:
     name: "Scientific Computing"

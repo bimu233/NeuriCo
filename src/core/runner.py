@@ -157,11 +157,12 @@ class ResearchRunner:
         idea_spec = idea.get('idea', {})
         title = idea_spec.get('title', 'Untitled Research')
 
-        # Resolve paper style: explicit user choice > domain default > neurips
+        # Resolve paper style: explicit user choice > domain config default > neurips
         if paper_style is None:
-            _DOMAIN_STYLE_DEFAULTS = {'mathematics': 'ams'}
             domain = idea_spec.get('domain', 'general')
-            paper_style = _DOMAIN_STYLE_DEFAULTS.get(domain, 'neurips')
+            config_loader = ConfigLoader()
+            domain_style = config_loader.get_domain_paper_style(domain)
+            paper_style = domain_style if domain_style else 'neurips'
 
         # Update status
         self.idea_manager.update_status(idea_id, 'in_progress')
