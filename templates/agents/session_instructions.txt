@@ -1,5 +1,28 @@
 {{ session_start }}
 {{ priority_section }}
+CONTEXT RECOVERY (Run this FIRST, before anything else)
+────────────────────────────────────────────────────────────────────────────────
+Your context may have been compacted or this session may be a resume. Check:
+
+  ls STATE.md 2>/dev/null && echo "STATE_EXISTS" || echo "FRESH_START"
+
+If STATE.md EXISTS:
+  cat STATE.md
+  → Read "Current State" to find out which phase to resume from
+  → Read "Research Specification" to recover the work_dir and hypothesis
+  → Read "Files and Resources" to know what is already downloaded/built
+  → Resume from the phase listed in "Current State" — skip completed phases
+  → Do NOT redo work that "Worklog" shows as already done
+
+If FRESH_START (no STATE.md):
+  → Create STATE.md now using the template at:
+     templates/base/deliverables/state_template.md
+  → Fill in "Research Specification" with the hypothesis and work_dir path
+  → Set "Current State" to: "Fresh start — beginning Phase 0 resource review"
+  → Proceed with the full workflow below
+
+════════════════════════════════════════════════════════════════════════════════
+
 CRITICAL: Environment Setup
 ────────────────────────────────────────────────────────────────────────────────
 You MUST use an isolated environment for this project. DO NOT use the
@@ -205,7 +228,8 @@ BEFORE YOU START: Review Pre-Gathered Resources (5-10 min)
   ✓ Check datasets/ directory to see what data is ready
   ✓ Explore code/ directory for baseline implementations
 
-  → WHEN COMPLETE: Immediately proceed to Phase 1 (Planning)
+  → WHEN COMPLETE: Write STATE.md — update "Current State" to "Phase 0 complete, entering Phase 1 Planning"; log in "Worklog"
+  → Then: Immediately proceed to Phase 1 (Planning)
 
 Phase 1: Motivation & Planning (20-40 min)
   ✓ FIRST: Write "Motivation & Novelty Assessment" section in planning.md
@@ -219,7 +243,8 @@ Phase 1: Motivation & Planning (20-40 min)
   ✓ Plan timeline and resource allocation
   ✓ Document plan in planning.md (2-3 pages maximum)
 
-  → WHEN COMPLETE: Immediately proceed to Phase 2 (Setup)
+  → WHEN COMPLETE: Write STATE.md — update "Current State" to "Phase 1 complete, entering Phase 2 Setup"; update "Experiment Design" with chosen baselines/metrics; log in "Worklog"
+  → Then: Immediately proceed to Phase 2 (Setup)
   → DO NOT WAIT for user confirmation - this is fully automated!
 
 Phase 2: Environment & Data Setup (10-20 min)
@@ -229,7 +254,8 @@ Phase 2: Environment & Data Setup (10-20 min)
   ✓ Verify data quality and characteristics
   ✓ Run exploratory data analysis
 
-  → WHEN COMPLETE: Immediately proceed to Phase 3 (Implementation)
+  → WHEN COMPLETE: Write STATE.md — update "Current State" to "Phase 2 complete, entering Phase 3 Implementation"; update "Files and Resources" with dataset paths; log in "Worklog"
+  → Then: Immediately proceed to Phase 3 (Implementation)
 
 Phase 3: Implementation (60-90 min)
   {{ code_workflow }}
@@ -240,7 +266,8 @@ Phase 3: Implementation (60-90 min)
   ✓ Write clean, documented code with comments and docstrings
   ✓ Test incrementally
 
-  → WHEN COMPLETE: Immediately proceed to Phase 4 (Experiments)
+  → WHEN COMPLETE: Write STATE.md — update "Current State" to "Phase 3 complete, entering Phase 4 Experiments"; update "Files and Resources" with key scripts; update "Workflow" with run commands; log in "Worklog"
+  → Then: Immediately proceed to Phase 4 (Experiments)
 
 Phase 4: Experimentation (60-90 min)
   ✓ Run baseline experiments
@@ -249,7 +276,8 @@ Phase 4: Experimentation (60-90 min)
   ✓ Generate visualizations
   ✓ Monitor for issues
 
-  → WHEN COMPLETE: Immediately proceed to Phase 5 (Analysis)
+  → WHEN COMPLETE: Write STATE.md — update "Current State" to "Phase 4 complete, entering Phase 5 Analysis"; update "Experiment Results" with raw numbers from results/; log errors in "Errors & Corrections"; log in "Worklog"
+  → Then: Immediately proceed to Phase 5 (Analysis)
 
 Phase 5: Analysis (30-45 min)
   ✓ Analyze results statistically
@@ -258,7 +286,8 @@ Phase 5: Analysis (30-45 min)
   ✓ Create comprehensive visualizations
   ✓ Document findings incrementally
 
-  → WHEN COMPLETE: Immediately proceed to Phase 6 (Documentation)
+  → WHEN COMPLETE: Write STATE.md — update "Current State" to "Phase 5 complete, entering Phase 6 Documentation"; update "Learnings" with key findings; update "Experiment Results" with final tables; log in "Worklog"
+  → Then: Immediately proceed to Phase 6 (Documentation)
 
 Phase 6: Final Documentation (20-30 min) - MANDATORY BEFORE ENDING SESSION
   ✓ Create REPORT.md with ACTUAL experimental results (not placeholder)
@@ -267,7 +296,8 @@ Phase 6: Final Documentation (20-30 min) - MANDATORY BEFORE ENDING SESSION
   ✓ Verify all code has clear comments and docstrings
   ✓ Check reproducibility
 
-  → WHEN COMPLETE: Session is finished
+  → WHEN COMPLETE: Write STATE.md — update "Current State" to "All phases complete — session finished"; update "Experiment Results" with final confirmed numbers; update "Learnings" with takeaways; log in "Worklog"
+  → Session is finished
 
 CRITICAL REMINDERS:
 - This is a SINGLE CONTINUOUS SESSION covering all 6 phases
