@@ -435,7 +435,7 @@ class ResearchRunner:
             print("=" * 80)
             print()
 
-            with open(log_file, 'w') as log_f:
+            with open(log_file, 'w', encoding='utf-8') as log_f:
                 # Start process in workspace directory
                 process = subprocess.Popen(
                     shlex.split(cmd),
@@ -444,6 +444,8 @@ class ResearchRunner:
                     stderr=subprocess.STDOUT,
                     env=env,
                     text=True,
+                    encoding='utf-8',
+                    errors='replace',
                     bufsize=1,
                     cwd=str(work_dir)
                 )

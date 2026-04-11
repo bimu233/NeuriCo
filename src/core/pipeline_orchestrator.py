@@ -411,7 +411,8 @@ class ResearchPipelineOrchestrator:
             success = False
             start_time = time.time()
 
-            with open(log_file, 'w') as log_f, open(transcript_file, 'w') as transcript_f:
+            with open(log_file, 'w', encoding='utf-8') as log_f, \
+                 open(transcript_file, 'w', encoding='utf-8') as transcript_f:
                 process = subprocess.Popen(
                     shlex.split(cmd),
                     stdin=subprocess.PIPE,
@@ -419,6 +420,8 @@ class ResearchPipelineOrchestrator:
                     stderr=subprocess.STDOUT,
                     env=env,
                     text=True,
+                    encoding='utf-8',
+                    errors='replace',
                     bufsize=1,
                     cwd=str(self.work_dir)
                 )
