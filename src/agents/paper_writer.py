@@ -101,7 +101,7 @@ def _copy_style_files(draft_dir: Path, style: str):
     if style_dir.exists():
         for f in style_dir.glob("*"):
             if f.is_file():
-                shutil.copy(f, draft_dir)
+                shutil.copyfile(f, draft_dir / f.name)
         print(f"   Copied {style} style files to {draft_dir}")
     else:
         print(f"   Warning: Style directory {style_dir} not found")
@@ -129,7 +129,7 @@ def _copy_paper_writing_resources(draft_dir: Path):
         commands_dst.mkdir(exist_ok=True)
 
         for f in commands_src.glob("*.tex"):
-            shutil.copy(f, commands_dst)
+            shutil.copyfile(f, commands_dst / f.name)
 
         print(f"   Copied command templates to {commands_dst}")
     else:
@@ -153,7 +153,7 @@ def _copy_example_papers(work_dir: Path):
     examples_dst = work_dir / "paper_examples"
 
     if examples_src.exists() and not examples_dst.exists():
-        shutil.copytree(examples_src, examples_dst)
+        shutil.copytree(examples_src, examples_dst, copy_function=shutil.copyfile)
         print(f"   Copied example papers to {examples_dst}")
     elif examples_dst.exists():
         print(f"   Example papers already exist at {examples_dst}")
@@ -179,7 +179,7 @@ def _copy_paper_writing_templates(work_dir: Path):
 
         # Copy markdown files (style guide, examples)
         for f in paper_writing_src.glob("*.md"):
-            shutil.copy(f, paper_writing_dst)
+            shutil.copyfile(f, paper_writing_dst / f.name)
 
         print(f"   Copied paper writing templates to {paper_writing_dst}")
     else:
