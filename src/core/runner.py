@@ -345,10 +345,7 @@ class ResearchRunner:
                         print(f"\n⚠️  Paper generation failed (research still succeeded)")
 
             except Exception as e:
-                import traceback
                 print(f"\n❌ Pipeline error: {e}")
-                with open(work_dir / "pipeline_error.log", 'w', encoding='utf-8') as _ef:
-                    traceback.print_exc(file=_ef)
                 success = False
                 # Don't raise - let finally block handle cleanup
             finally:
