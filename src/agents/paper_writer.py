@@ -265,7 +265,7 @@ def run_paper_writer(
     log_file = logs_dir / f"paper_writer_{provider}.log"
 
     try:
-        with open(log_file, 'w') as log_f:
+        with open(log_file, 'w', encoding='utf-8') as log_f:
             process = subprocess.Popen(
                 shlex.split(cmd),
                 stdin=subprocess.PIPE,
@@ -273,6 +273,8 @@ def run_paper_writer(
                 stderr=subprocess.STDOUT,
                 env=env,
                 text=True,
+                encoding='utf-8',
+                errors='replace',
                 cwd=str(work_dir)
             )
 
