@@ -1,5 +1,24 @@
 {{ session_start }}
 {{ priority_section }}
+RESUME CHECK — do this before anything else:
+────────────────────────────────────────────────────────────────────────────────
+STATE.md is present in your workspace (created by the pipeline).
+READ it now. Check the Phase Status table in "# Current State":
+  - All phases pending   → new session, start from Phase 0
+  - Some phases DONE     → resume session, skip DONE phases, start from first non-DONE
+The rest of STATE.md contains all decisions, paths, errors, and results from
+prior sessions — use it to avoid repeating work or mistakes.
+If resuming into Phase 3 (Implementation): READ # Errors and Corrections before touching any code.
+Each entry lists an error and the fix that was attempted — do not retry fixes already listed there.
+
+⚠️  IMMEDIATELY after reading STATE.md — before environment setup, before any other action:
+Write to STATE.md now:
+  - Session Title: set a 5-10 word title for this research task
+  - Worklog: add "[Session Start] Beginning session — Phase 0 IN PROGRESS"
+  - Current State: set Active to "Phase 0 — Motivation: IN PROGRESS"
+This write must happen BEFORE environment setup so context compaction cannot erase it.
+════════════════════════════════════════════════════════════════════════════════
+
 CRITICAL: Environment Setup
 ────────────────────────────────────────────────────────────────────────────────
 You MUST use an isolated environment for this project. DO NOT use the
@@ -138,10 +157,15 @@ run meaningful experiments that test the hypothesis using the resources provided
 WHAT "FULLY-AUTOMATED" MEANS:
 ✓ Complete ALL phases (1-6) in a SINGLE CONTINUOUS SESSION
 ✓ Make reasonable decisions autonomously without waiting for user input
-✓ Move immediately from one phase to the next
+✓ Move immediately from one phase to the next — EXCEPT at ⚠️ CHECKPOINT steps
 ✓ Use the pre-gathered resources effectively
-✓ Document decisions, but keep moving forward
+✓ Document decisions — ⚠️ CHECKPOINT writes to STATE.md ARE the documentation step, not optional
 ✓ Deliver REPORT.md with actual experimental results at the end
+
+⚠️ CHECKPOINTS ARE MANDATORY PHASE TRANSITIONS — NOT OPTIONAL PAUSES:
+Every ⚠️ CHECKPOINT in the research task is a required gate between phases.
+Writing to STATE.md at each checkpoint IS "moving forward" — it is part of the phase.
+Do NOT skip ⚠️ CHECKPOINT steps. They take less than 1 minute and enable session recovery.
 
 YOU WILL NOT GET ADDITIONAL INSTRUCTIONS between phases.
 This prompt contains everything you need. Execute it completely from start to finish.
@@ -198,7 +222,31 @@ Execute the following research task:
 EXECUTION WORKFLOW (FOLLOW THIS SEQUENCE - DO NOT STOP BETWEEN PHASES):
 ────────────────────────────────────────────────────────────────────────────────
 
+INTER-PHASE MEMORY: STATE.md
+────────────────────────────────────────────────────────────────────────────────
+STATE.md is your persistent memory file. It is created by the pipeline before
+you start — it is always present in your workspace. It survives context
+compaction and lets you resume correctly if the session is interrupted.
+
+RULES — follow exactly:
+  1. SESSION START: READ STATE.md immediately. Check the Phase Status table in
+     "# Current State" — the first non-DONE phase is where you resume from.
+     All decisions, paths, errors, and results from prior sessions are in there.
+  2. PHASE END: update STATE.md before proceeding to the next phase.
+  3. NEVER modify lines written in italic format: _like this_
+     These are structural template instructions — preserve them EXACTLY as written.
+     Do not reword, remove, or overwrite italic lines under any circumstance.
+  4. Only write content BELOW the italic description line in each section.
+  5. Write detail-dense content: absolute file paths, exact error messages,
+     exact numerical results, precise shell commands.
+  6. Update "# Current State" whenever the phase status or active action changes.
+  7. Keep total file size under 150 lines / ~3,000 tokens.
+     If a section exceeds ~20 lines, condense older entries first.
+────────────────────────────────────────────────────────────────────────────────
+
 BEFORE YOU START: Review Pre-Gathered Resources (5-10 min)
+  ✓ READ STATE.md — check Phase Status table to determine if this is a resume.
+    If any phase shows DONE, skip it and continue from the first non-DONE phase.
   ✓ READ literature_review.md to understand the research landscape
   ✓ READ resources.md to see what's available
   ✓ Browse papers/ directory for key papers
@@ -218,6 +266,9 @@ Phase 1: Motivation & Planning (20-40 min)
   ✓ Choose baselines and metrics based on literature review
   ✓ Plan timeline and resource allocation
   ✓ Document plan in planning.md (2-3 pages maximum)
+  ✓ STATE.md: Write Research Specification (hypothesis, datasets, metrics, constraints).
+    Update Worklog.
+    Update Current State: mark Phase 1 as DONE, set Active to "Phase 2 — Setup".
 
   → WHEN COMPLETE: Immediately proceed to Phase 2 (Setup)
   → DO NOT WAIT for user confirmation - this is fully automated!
@@ -228,6 +279,9 @@ Phase 2: Environment & Data Setup (10-20 min)
   ✓ Load and verify pre-downloaded datasets from datasets/ directory
   ✓ Verify data quality and characteristics
   ✓ Run exploratory data analysis
+  ✓ STATE.md: Update Files and Resources (dataset paths, sizes, venv location).
+    Update Workflow (activation command, install commands). Update Worklog.
+    Update Current State: mark Phase 2 as DONE, set Active to "Phase 3 — Implementation".
 
   → WHEN COMPLETE: Immediately proceed to Phase 3 (Implementation)
 
@@ -239,6 +293,10 @@ Phase 3: Implementation (60-90 min)
   ✓ Create evaluation harness
   ✓ Write clean, documented code with comments and docstrings
   ✓ Test incrementally
+  ✓ STATE.md: Update Experiment Design (baselines, metrics, hyperparameters, seeds).
+    Update Files and Resources (key scripts + what they do). Record any errors in
+    Errors and Corrections. Update Worklog.
+    Update Current State: mark Phase 3 as DONE, set Active to "Phase 4 — Experimentation".
 
   → WHEN COMPLETE: Immediately proceed to Phase 4 (Experiments)
 
@@ -248,6 +306,10 @@ Phase 4: Experimentation (60-90 min)
   ✓ Collect results systematically (save to results/ directory)
   ✓ Generate visualizations
   ✓ Monitor for issues
+  ✓ STATE.md: Update Experiment Results with raw numbers from every run.
+    Update Workflow with exact commands used. Record any failed runs in
+    Errors and Corrections. Update Worklog.
+    Update Current State: mark Phase 4 as DONE, set Active to "Phase 5 — Analysis".
 
   → WHEN COMPLETE: Immediately proceed to Phase 5 (Analysis)
 
@@ -257,6 +319,10 @@ Phase 5: Analysis (30-45 min)
   ✓ Perform error analysis
   ✓ Create comprehensive visualizations
   ✓ Document findings incrementally
+  ✓ STATE.md: Update Learnings (what worked, what did not, insights).
+    Finalize Experiment Results with statistical test outcomes and effect sizes.
+    Update Worklog.
+    Update Current State: mark Phase 5 as DONE, set Active to "Phase 6 — Documentation".
 
   → WHEN COMPLETE: Immediately proceed to Phase 6 (Documentation)
 
@@ -266,6 +332,9 @@ Phase 6: Final Documentation (20-30 min) - MANDATORY BEFORE ENDING SESSION
   ✓ Ensure resources.md documents your research process
   ✓ Verify all code has clear comments and docstrings
   ✓ Check reproducibility
+  ✓ STATE.md: Final update — set Session Title to reflect completed work.
+    Update Worklog with session completion entry.
+    Update Current State: mark Phase 6 as DONE, set Active to "Complete — all deliverables written."
 
   → WHEN COMPLETE: Session is finished
 
