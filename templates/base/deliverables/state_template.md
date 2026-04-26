@@ -31,25 +31,25 @@ _Important files with absolute paths. Datasets: name, location, size. Key script
 Model checkpoints. Configuration files. Output directories._
 
 # Workflow
-_Exact commands to reproduce experiments in order. Environment activation command.
-How to interpret outputs. Package install commands used._
-
-# Errors and Corrections
-_Errors encountered: exact message, file path, line number, and how fixed.
-Approaches that FAILED and must NOT be retried — include the reason they failed.
-This is the anti-repetition record: if it is listed here, do not attempt it again._
+_Final successful reproduction commands only: environment activation command, then the exact run command.
+Do not list failed attempts here — those belong in # Experiment Attempts._
 
 # Experiment Design
 _Baselines chosen and justification. Evaluation metrics and how computed.
 Hyperparameters, random seeds, train/val/test splits. Architecture decisions and rationale._
 
-# Learnings
-_What worked and why. What did not work and why. Surprising findings. Domain insights.
-Do not duplicate content already recorded in other sections._
+# Experiment Attempts
+_One entry per run. Written BEFORE each run (Status: RUNNING) and updated AFTER (Status: FAILED or SUCCESS).
+Never delete or edit past entries — append only._
 
 # Experiment Results
 _Exact numerical results: metric name, value, std, conditions. Complete comparison tables.
 Record actual numbers, not prose summaries._
+
+# Learnings
+_What worked and why. What did not work and why. Surprising findings. Domain insights.
+Do not duplicate content already recorded in other sections._
+
 
 
 

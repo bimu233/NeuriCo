@@ -229,7 +229,7 @@ Prepare the environment and data before writing any code:
 ⚠️  CHECKPOINT — STATE.md is present (created by the pipeline). Write to it NOW before continuing:
    ✓ In the # Worklog section: append "[Phase 2 — Setup] Environment and data ready." — write this FIRST.
    ✓ In the # Files and Resources section: append dataset absolute path + size, venv absolute path, Python version, GPU model/memory.
-   ✓ In the # Workflow section: write exact activation command (e.g. source /path/.venv/bin/activate), exact package install commands used.
+   ✓ In the # Workflow section: write exact environment activation command (e.g. source /path/.venv/bin/activate). Package install commands belong in # Files and Resources, not here.
    ✓ In the # Current State section: change "Phase 2 — Setup:          in progress" to "Phase 2 — Setup:          DONE". Change Active to "Active: Phase 3 — Implementation: Starting."
 A Worklog entry does NOT substitute for writing to the named sections above.
 
@@ -283,25 +283,54 @@ This is a SEPARATE STATE.md edit from the Phase 3 end CHECKPOINT — do not defe
    ✓ In the # Current State section: change Active to "Active: Phase 3 — Implementation: running experiments".
 A Worklog entry does NOT substitute for writing to the named sections above.
 
-3. Iterative Development — follow this loop exactly:
+3. Iterative Development — follow this protocol exactly, one attempt at a time:
 
-   STEP A — Run the experiment.
+   STEP A — BEFORE RUN (write first, run second):
+   Append to the # Experiment Attempts section of STATE.md:
 
-   STEP B — If the run FAILED:
-   ⚠️  MANDATORY — do NOT touch any code until this STATE.md write is done:
-   Append to the # Errors and Corrections section of STATE.md:
-       Error: [exact last line of traceback or error message]
-       File:  [file path and line number]
-       Fix:   [what you are about to change and why]
-   This write is the gate. You cannot apply a fix until it is written.
+       Attempt N:
+       - Status: RUNNING
+       - Command: [exact command you are about to run]
+
+   Do not run the experiment until this write is complete.
+
+   STEP B — RUN the experiment.
+
+   STEP C — AFTER RUN, update the Attempt N entry in STATE.md immediately.
+
+   A run is FAILED if ANY of the following occur:
+   - The process exits with a non-zero code
+   - A Python exception or traceback appears in output
+   - An output file that should exist is missing
+   - Metrics contain NaN, Inf, or nonsensical values
+   - You need to change any code before running again
+
+   IF FAILED — append to STATE.md # Experiment Attempts BEFORE touching any code:
+       Attempt N:
+       - Status: FAILED
+       - Command: [exact command run]
+       - Error: [exact last line of traceback or error message]
+       - Fix Applied: [what you are about to change and why]
+       - Output: [any partial output saved, or None]
    Then apply the fix and return to STEP A.
 
-   STEP C — If the run SUCCEEDED: proceed past this loop to the Phase 3 CHECKPOINT.
+   IF SUCCESS — append to STATE.md # Experiment Attempts:
+       Attempt N:
+       - Status: SUCCESS
+       - Command: [exact command run]
+       - Metrics: [key metric values]
+       - Output Files: [paths to result files]
+   Then proceed past this loop to the Phase 3 CHECKPOINT.
+
+   ⚠️  Hard constraint: You are NOT allowed to modify code or run the next
+   experiment until the current Attempt entry shows Status: FAILED or SUCCESS
+   (not RUNNING). Writing RUNNING and FAILED in one combined edit is allowed —
+   the constraint is that the FAILED entry exists before any code changes.
 
    Additional guidance:
    ✓ Start small - validate on tiny dataset first
    ✓ Gradually scale up
-   ✓ Before each run: READ # Errors and Corrections — do not retry a fix already listed there
+   ✓ Before each run: READ # Experiment Attempts — do not retry a fix already listed there
 
 BEST PRACTICES:
 
@@ -355,8 +384,8 @@ with open('results/config.json', 'w') as f:
    ✓ In the # Worklog section: append "[Phase 3 — Implementation] Implementation complete." — write this FIRST.
    ✓ In the # Experiment Design section: confirm baselines, metrics, hyperparameters, seeds are complete (add anything missing from the earlier write).
    ✓ In the # Files and Resources: confirm all key scripts are listed with absolute paths. Write path to experiment result files.
-   ✓ In the # Workflow section: confirm exact run commands are recorded verbatim.
-   ✓ In the # Errors and Corrections section: confirm all errors are recorded (should already be written during the loop). Add any that were missed; mark each fix as applied or pending. If no errors occurred, write "None."
+   ✓ In the # Workflow section: confirm the final successful run command is recorded (one line, verbatim).
+   ✓ In the # Experiment Attempts section: confirm all attempts are recorded with Status FAILED or SUCCESS (none left as RUNNING). If no errors occurred, write "Attempt 1: Status: SUCCESS" with metrics.
    ✓ Current State: change "Phase 3 — Implementation: ..." to "Phase 3 — Implementation: DONE". Change Active to "Active: Phase 4 — Analysis: Starting."
 A Worklog entry does NOT substitute for writing to the named sections above.
 
@@ -379,8 +408,8 @@ If it is NOT "DONE": complete the Phase 3 CHECKPOINT write before doing any anal
    ✓ In the # Worklog section: append "[Phase 3 — Implementation] Implementation complete."
    ✓ In the # Experiment Design section: confirm baselines, metrics, hyperparameters, seeds are recorded.
    ✓ In the # Files and Resources section: confirm all key scripts with absolute paths are listed.
-   ✓ In the # Workflow section: confirm exact run commands are recorded verbatim.
-   ✓ In the # Errors and Corrections section: confirm all errors recorded; if none, write "None."
+   ✓ In the # Workflow section: confirm the final successful run command is recorded (one line, verbatim).
+   ✓ In the # Experiment Attempts section: confirm all attempts are recorded with Status FAILED or SUCCESS (none left as RUNNING).
    ✓ In the # Current State section: change "Phase 3 — Implementation: ..." to "Phase 3 — Implementation: DONE". Change Active to "Active: Phase 4 — Analysis: Starting."
    A Worklog entry does NOT substitute for writing to the named sections above.
 
