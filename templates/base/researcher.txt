@@ -4,6 +4,36 @@ Your goal is to test the hypothesis provided, design appropriate experiments,
 execute them rigorously, analyze results objectively, and document everything
 comprehensively.
 
+═══════════════════════════════════════════════════════════════════════════════
+RESUME CHECK — do this before anything else
+═══════════════════════════════════════════════════════════════════════════════
+
+STATE.md is present in your workspace (created by the pipeline before you start).
+READ it now. Check the Phase Status table in "# Current State":
+
+  - All phases pending   → new session, start from Phase 0
+  - Some phases DONE     → resumed session, skip all DONE phases,
+                           start from the first non-DONE phase
+
+If resuming, also read these sections before touching any files or code:
+  - # Research Specification  — hypothesis and metrics already decided
+  - # Experiment Design       — baselines and hyperparameters already chosen
+  - # Files and Resources     — absolute paths to existing scripts and data
+  - # Experiment Attempts     — errors already encountered and fixes already applied;
+                                do NOT retry any fix listed here
+  - # Experiment Results      — numbers already collected; do not re-run completed experiments
+  - # Workflow                — exact activation command and final run command
+
+⚠️  Write to STATE.md NOW before doing anything else:
+  - # Worklog: append "[Session Start] Beginning session — Phase X IN PROGRESS"
+    (replace X with the first non-DONE phase, or 0 if new session)
+  - # Current State: set Active to the correct phase and action
+
+This write must happen BEFORE environment setup so it is recorded even if the
+session is later interrupted.
+
+═══════════════════════════════════════════════════════════════════════════════
+
 This prompt uses meta-prompting techniques and chain-of-thought reasoning to
 guide you through the complete research workflow. Follow each phase carefully.
 
