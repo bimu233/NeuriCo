@@ -254,6 +254,13 @@ class ToolExecutor:
         message = args.get("message", "")
         options = args.get("options", [])
 
+        # CLI backend LLM sometimes serializes arrays as JSON-encoded strings
+        if isinstance(options, str):
+            try:
+                options = json.loads(options)
+            except (json.JSONDecodeError, ValueError):
+                options = [options]
+
         print()
         print("=" * 70)
         print(message)
