@@ -1674,12 +1674,26 @@ cmd__run_agent() {
     echo -e "${BLUE}Running agent: $1${NC}"
     echo -e "${BLUE}Workspace:${NC} $workspace_dir -> /workspaces"
 
+    # Shell-quote each passthrough argument so values containing spaces (e.g. a
+    # workspace path under "/Users/.../chai lab/...") survive the `eval` re-parse
+    # below. Without this, `$@` is split on whitespace and agent_runner.py sees
+    # the fragments as stray positional args ("unrecognized arguments").
+    local agent_args=""
+    for arg in "$@"; do
+        agent_args+=" $(printf '%q' "$arg")"
+    done
+
+    # Mount the host src/ over the image's baked-in copy so interactive agents
+    # always run the current source. agent_runner.py and its sibling modules are
+    # newer than the published image; without this read-only mount the container
+    # fails with "No such file" on /app/src/core/agent_runner.py.
     eval "docker run --rm \
         $gpu_flags \
         $user_flags \
         --env-file \"$PROJECT_ROOT/.env\" \
         -e NEURICO_WORKSPACE=/workspaces \
         -v \"$workspace_dir:/workspaces\" \
+        -v \"$PROJECT_ROOT/src:/app/src:ro\" \
         -v \"$PROJECT_ROOT/ideas:/app/ideas\" \
         -v \"$PROJECT_ROOT/logs:/app/logs\" \
         -v \"$PROJECT_ROOT/config:/app/config:ro\" \
@@ -1687,7 +1701,7 @@ cmd__run_agent() {
         $credential_mounts \
         -w /app \
         \"$IMAGE_NAME\" \
-        python /app/src/core/agent_runner.py $@"
+        python /app/src/core/agent_runner.py$agent_args"
 }
 
 # -----------------------------------------------------------------------------
@@ -1696,7 +1710,7 @@ cmd__run_agent() {
 # -----------------------------------------------------------------------------
 cmd_interactive() {
     if [ -z "$1" ]; then
-        echo -e "${RED}Usage: $0 interactive <idea_id> [--provider claude] [--engagement balanced]${NC}"
+        echo -e "${RED}Usage: $0 interactive <idea_id> [--provider claude] [--engagement balanced] [--cli] [--port N] [--no-browser]${NC}"
         exit 1
     fi
 
@@ -1740,7 +1754,7 @@ cmd_help() {
     echo "  fetch <url> [--submit]    Fetch idea from IdeaHub"
     echo "  submit <idea.yaml>        Submit a research idea"
     echo "  run <id> [options]        Run research exploration"
-    echo "  interactive <id>          Interactive mode with human-in-the-loop"
+    echo "  interactive <id>          Interactive mode (browser UI; --cli for terminal)"
     echo "  update-tools              Update Claude/Codex/Gemini to latest versions"
     echo "  bump-version <version>    Bump version across all files (e.g., 0.3.0)"
     echo "  up                        Start container in background (compose)"

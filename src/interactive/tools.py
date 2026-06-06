@@ -27,12 +27,19 @@ class ToolExecutor:
     """
 
     def __init__(self, work_dir: Path, session: SessionState,
-                 idea_file: Path, provider: str, project_root: Path):
+                 idea_file: Path, provider: str, project_root: Path,
+                 channel=None):
         self.work_dir = Path(work_dir)
         self.session = session
         self.idea_file = idea_file
         self.provider = provider
         self.project_root = project_root
+        # UserChannel for human interaction (terminal or web). Falls back to a
+        # TerminalChannel so the executor works standalone.
+        if channel is None:
+            from interactive.channel import TerminalChannel
+            channel = TerminalChannel()
+        self.channel = channel
 
         # Track running agent processes
         self._running_agents: Dict[str, subprocess.Popen] = {}
@@ -78,14 +85,31 @@ class ToolExecutor:
         provider = args.get("provider", self.provider)
         run_id = self.session.generate_run_id(agent_name)
 
+        # agent_runner.py runs INSIDE the Docker container, where the host
+        # workspace parent is mounted at /workspaces and the host ideas/ dir at
+        # /app/ideas (see cmd__run_agent in docker/run.sh). The manager holds
+        # HOST paths, which don't exist inside the container — translate them to
+        # their in-container equivalents before handing them off. (This also
+        # keeps any space in the host path, e.g. "chai lab", out of the args.)
+        container_workspace = f"/workspaces/{self.work_dir.name}"
+        try:
+            ideas_root = (self.project_root / "ideas").resolve()
+            rel_idea = self.idea_file.resolve().relative_to(ideas_root)
+            container_idea_file = f"/app/ideas/{rel_idea}"
+        except ValueError:
+            # Idea file lives outside the mounted ideas/ dir — fall back to the
+            # host path (best effort; the run will surface a clear error if the
+            # path is unreachable inside the container).
+            container_idea_file = str(self.idea_file)
+
         # Build the Docker command via ./neurico _run-agent
         neurico_cmd = str(self.project_root / "neurico")
         cmd_parts = [
             neurico_cmd, "_run-agent", agent_name,
-            "--workspace", str(self.work_dir),
+            "--workspace", container_workspace,
             "--provider", provider,
             "--run-id", run_id,
-            "--idea-file", str(self.idea_file),
+            "--idea-file", container_idea_file,
         ]
 
         # Agent-specific args
@@ -254,37 +278,22 @@ class ToolExecutor:
         message = args.get("message", "")
         options = args.get("options", [])
 
-        print()
-        print("=" * 70)
-        print(message)
-        print("=" * 70)
+        # The CLI backend's XML tool-call shim can hand us `options` as a
+        # JSON-encoded string instead of a list. Coerce it back so the browser
+        # renders clickable buttons regardless of backend quirks.
+        if isinstance(options, str):
+            try:
+                parsed = json.loads(options)
+                options = parsed if isinstance(parsed, list) else [options]
+            except (json.JSONDecodeError, ValueError):
+                options = [options] if options.strip() else []
+        if not isinstance(options, list):
+            options = []
+        options = [str(o) for o in options]
 
-        if options:
-            print()
-            for i, opt in enumerate(options, 1):
-                print(f"  [{i}] {opt}")
-            print()
-
-            while True:
-                response = input("Your choice (number or type your response): ").strip()
-
-                # Check if they entered a number
-                try:
-                    idx = int(response) - 1
-                    if 0 <= idx < len(options):
-                        response = options[idx]
-                        break
-                except ValueError:
-                    pass
-
-                # Accept free-form text too
-                if response:
-                    break
-                print("Please enter a response.")
-        else:
-            print()
-            response = input("Your response: ").strip()
-
+        response = self.channel.prompt(message=message, options=options or None)
+        if response is None:
+            return "[User ended the session without responding.]"
         return response
 
     def _update_session(self, args: Dict[str, Any]) -> str:
