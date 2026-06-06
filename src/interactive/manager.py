@@ -469,13 +469,10 @@ def main():
             im = IdeaManager(PROJECT_ROOT / "ideas")
             im.update_status(args.idea_id, "in_progress")
             print(f"[Idea moved to in_progress]")
-            # The status update just MOVED the file (submitted/ -> in_progress/),
-            # so the idea_file path captured above is now stale. Re-resolve it so
-            # agents launched later receive the file's current location instead of
-            # the old submitted/ path (which would FileNotFound inside the agent).
-            refreshed = find_idea(args.idea_id)
-            if refreshed and refreshed[0] is not None:
-                idea, idea_file = refreshed
+            # Note: this MOVES the file (submitted/ -> in_progress/), making the
+            # captured idea_file path stale. The agent dispatch in tools.py (#104)
+            # falls back to ideas/in_progress/<name> at launch time, so no
+            # re-resolve is needed here.
         except Exception as e:
             print(f"[Warning: Could not update idea status: {e}]")
 

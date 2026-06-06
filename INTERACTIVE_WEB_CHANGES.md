@@ -4,10 +4,18 @@ This document records **our changes only** — the work to add a browser-based
 interface to NeuriCo's interactive mode. Use it as raw material for the PR
 description.
 
-> **Baseline:** interactive mode (the LLM-driven manager that runs agents and
-> stops to ask the human) already existed as a **terminal-only** feature before
-> this work. That baseline is not ours; we build on top of it. Everything below
-> is what *we* added or modified.
+> **Baseline:** this work builds on **two** prior PRs and is not ours:
+> - **#86** — interactive mode itself (the LLM-driven manager that runs agents
+>   and stops to ask the human), originally **terminal-only**.
+> - **#104** — the bug fixes that make #86 actually work end-to-end: shell-quoting
+>   the agent's args (spaces in paths), host→container path translation,
+>   submitted→in_progress idea-file handling, the `manager_session.json` array
+>   serialization fix, a workspace-existence check in `agent_runner.py`, and a
+>   strengthened system prompt (tool discipline / no fabricated results).
+>
+> We **merged #104 in** and dropped our own equivalents of those fixes in favour
+> of #104's (more comprehensive) versions. Everything below is what *we* add on
+> top of #86 + #104: the **browser UI**.
 
 ## TL;DR
 
@@ -46,46 +54,47 @@ terminal behavior. Autonomous mode (`./neurico run`) is untouched.
   (web port, default 7890), `--no-browser` (don't auto-open the browser).
 - Web is the default: builds a `WebChannel` + `InteractiveWebServer`, prints
   the URL, auto-opens the browser, and tears the server down in a `finally`.
-- **Re-resolve `idea_file` after the submitted→in_progress move.** Startup looks
-  up the idea (capturing its `submitted/` path), then calls
-  `IdeaManager.update_status(..., "in_progress")`, which *moves* the file. The
-  captured path was passed to every agent unchanged, so the agent opened a
-  `submitted/<id>.yaml` that no longer existed (`FileNotFoundError` inside
-  `agent_runner.py`). Now `find_idea` is re-run after the move so agents receive
-  the file's current `in_progress/` location.
+
+> The submitted→in_progress idea-file problem we originally fixed here is now
+> handled by **#104** in `tools.py` (it falls back to `ideas/in_progress/<name>`
+> when the captured path no longer exists), so our `manager.py` re-resolve was
+> dropped in the merge. `manager.py` is now purely the web-channel wiring.
 
 ### `src/interactive/tools.py`
 - `ToolExecutor` takes a `channel` (defaults to `TerminalChannel` so it still
   works standalone).
 - The `ask_user` tool routes through `channel.prompt(message, options)`.
 - Coerces `options` when the CLI backend's XML tool-call shim hands it back as
-  a JSON-encoded string, so the browser still renders clickable buttons.
-- **Translates host paths to in-container paths in `_run_agent`.** The manager
-  runs on the host but the agent runs inside Docker, where the workspace parent
-  is mounted at `/workspaces` and `ideas/` at `/app/ideas`. Previously it passed
-  raw host paths (`str(self.work_dir)` / `str(self.idea_file)`) for `--workspace`
-  and `--idea-file`; those don't exist in the container, so the agent would write
-  its logs to an unmounted path (lost on container exit) — or, with a space in
-  the host path like `chai lab`, fail argument parsing outright. Now it sends
-  `/workspaces/<workspace_name>` and `/app/ideas/<rel_path>` instead.
+  a JSON-encoded string, so the browser still renders clickable buttons. (We keep
+  our coercion here because our `_ask_user` routes through `channel.prompt(...)`
+  for the web; #104's equivalent targeted the old terminal `print`/`input` path.)
+
+> Host→container path translation in `_run_agent` (workspace + idea-file) now
+> comes from **#104** (its version honours `NEURICO_WORKSPACE_DIR` and the
+> in_progress fallback). The `update_session` JSON-array-string fix is also #104.
+> Our own path-translation edit was dropped in the merge in favour of theirs.
 
 ### `templates/manager/system_prompt.txt`
-- Expanded "do NOT engage the human" rules: don't ask about recoverable tool
-  failures, infra/debug details, equivalent low-risk fixes, repeated
-  confirmations, or anything that belongs in the session log.
-- Added an explicit "engage the human ONLY when..." list: real research-scope
-  decisions, destructive/irreversible/expensive/credentialed actions, info only
-  the human can provide, or genuine preference-dependent forks.
+The merged file keeps **both** sets of edits (they touch different sections):
+- **Ours:** expanded "do NOT engage the human" rules (don't ask about recoverable
+  tool failures, infra/debug details, equivalent low-risk fixes, repeated
+  confirmations, or anything that belongs in the session log) plus an explicit
+  "engage the human ONLY when..." list (real research-scope decisions,
+  destructive/irreversible/expensive/credentialed actions, info only the human
+  can provide, or genuine preference-dependent forks).
+- **From #104:** a "Your Tools — READ THIS CAREFULLY" section and "Critical
+  Rules" (you have exactly five tools; never fabricate `<tool_result>` blocks;
+  never ask questions in plain text; verify before reporting; never call a
+  non-existent tool). These directly target the manager's tool-confusion/thrashing.
 
 ### `docker/run.sh`
 - Updated `interactive` usage and help text to mention the browser UI and the
   `--cli` flag.
-- **Shell-quoted the agent's passthrough args in `cmd__run_agent`.** The handler
-  builds the `docker run` invocation with `eval "... agent_runner.py $@"`. The
-  unquoted `$@` is re-split on whitespace by `eval`, so a workspace path under
-  `/Users/.../chai lab/...` broke at the space and `agent_runner.py` rejected the
-  fragments (`unrecognized arguments`). Each arg is now run through
-  `printf '%q'` before entering the `eval` string so spaces survive.
+
+> The space-in-path quoting fix (`printf '%q'` on the agent's args before the
+> `eval`) now comes from **#104**; our equivalent loop was dropped in the merge.
+> What remains uniquely ours below is the `src/` mount.
+
 - **Mounted host `src/` into the agent container** (`-v "$PROJECT_ROOT/src:/app/src:ro"`
   in `cmd__run_agent`). Interactive mode runs each agent via
   `python /app/src/core/agent_runner.py` inside Docker, but `agent_runner.py` is

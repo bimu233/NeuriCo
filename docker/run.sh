@@ -1676,17 +1676,15 @@ cmd__run_agent() {
 
     # Shell-quote each passthrough argument so values containing spaces (e.g. a
     # workspace path under "/Users/.../chai lab/...") survive the `eval` re-parse
-    # below. Without this, `$@` is split on whitespace and agent_runner.py sees
-    # the fragments as stray positional args ("unrecognized arguments").
-    local agent_args=""
-    for arg in "$@"; do
-        agent_args+=" $(printf '%q' "$arg")"
-    done
+    # below. Without this, `$@` splits on whitespace and agent_runner.py sees the
+    # fragments as stray positional args ("unrecognized arguments"). (From #104.)
+    local quoted_args
+    quoted_args=$(printf ' %q' "$@")
 
     # Mount the host src/ over the image's baked-in copy so interactive agents
-    # always run the current source. agent_runner.py and its sibling modules are
-    # newer than the published image; without this read-only mount the container
-    # fails with "No such file" on /app/src/core/agent_runner.py.
+    # always run the current source (our addition, not in #104). Without this
+    # read-only mount, an unrebuilt image fails with "No such file" on
+    # /app/src/core/agent_runner.py.
     eval "docker run --rm \
         $gpu_flags \
         $user_flags \
@@ -1701,7 +1699,7 @@ cmd__run_agent() {
         $credential_mounts \
         -w /app \
         \"$IMAGE_NAME\" \
-        python /app/src/core/agent_runner.py$agent_args"
+        python /app/src/core/agent_runner.py$quoted_args"
 }
 
 # -----------------------------------------------------------------------------
