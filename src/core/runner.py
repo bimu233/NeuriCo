@@ -309,6 +309,10 @@ class ResearchRunner:
             if state_template.exists():
                 state_md.write_text(state_template.read_text(encoding='utf-8'), encoding='utf-8')
                 print(f"   Initialized STATE.md")
+            else:
+                print(f"   WARNING: STATE.md template not found at {state_template} — "
+                      f"STATE.md will not be created. The agent prompt references this file; "
+                      f"check that the image is up to date (./neurico build).")
 
         # Copy helper scripts to workspace
         self._copy_workspace_resources(work_dir)
