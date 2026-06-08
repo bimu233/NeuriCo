@@ -5,8 +5,8 @@
 
 manager:
   # LLM backend for manager reasoning
-  # Default: auto-detected — "mcp" when the Claude Code CLI ('claude') is in PATH,
-  #          "openrouter" otherwise.
+  # Default: auto-detected from default_provider — "mcp" when provider is "claude",
+  #          "cli" (XML tool definitions) otherwise (Codex, Gemini, …).
   # Options:
   #   "mcp"           — claude -p with MCP-registered tools (requires Claude Code CLI + pip install mcp)
   #                     Recommended for Claude users: no hallucinated <tool_result> blocks.

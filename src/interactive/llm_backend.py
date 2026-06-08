@@ -577,8 +577,11 @@ def create_backend(config: Dict[str, Any],
                 "      openrouter      — requires OPENROUTER_API_KEY (supports Codex, Gemini, …)"
             )
     else:
-        # Auto-detect: use MCP when Claude Code CLI is available, otherwise OpenRouter
-        backend = "mcp" if shutil.which("claude") else "openrouter"
+        # Auto-detect based on provider: Claude → mcp (native tool calling via claude -p),
+        # anything else (Codex, Gemini, …) → cli (XML tool definitions in prompt)
+        provider = os.environ.get("NEURICO_PROVIDER",
+                                  config.get("manager", {}).get("default_provider", "claude"))
+        backend = "mcp" if provider == "claude" else "cli"
 
     return LLMBackend(backend=backend, model=model,
                       mcp_config_path=mcp_config_path, channel=channel,

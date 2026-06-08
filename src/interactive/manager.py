@@ -247,12 +247,13 @@ class InteractiveManager:
         # Write MCP config before creating backend so the path is available
         mcp_config_path = None
         ipc_dir = None
-        import shutil as _shutil
         backend_name = os.environ.get("NEURICO_MANAGER_BACKEND",
                                       config.get("manager", {}).get("llm_backend")) or None
         if backend_name is None:
             # Mirror the same auto-detection as create_backend()
-            backend_name = "mcp" if _shutil.which("claude") else "openrouter"
+            _provider = os.environ.get("NEURICO_PROVIDER",
+                                       config.get("manager", {}).get("default_provider", "claude"))
+            backend_name = "mcp" if _provider == "claude" else "cli"
         if backend_name == "mcp":
             # Create IPC dir so the MCP server uses file IPC for ask_user
             # (routes ask_user through the web channel instead of the terminal)
